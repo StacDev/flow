@@ -16,6 +16,7 @@ import 'flow_error_state.dart';
 import 'flow_markdown.dart';
 import 'flow_streaming_text.dart';
 import 'flow_thinking_indicator.dart';
+import 'flow_tool.dart';
 
 /// Renders a [FlowCustomPart]; return null to skip it.
 ///
@@ -41,7 +42,9 @@ typedef FlowCustomPartBuilder =
 /// card — the message's own [FlowErrorPart], or a default one when the host
 /// supplies none; an error user bubble recolors to the error container.
 /// A [FlowConfirmationPart] renders a [FlowConfirmation] card, its buttons
-/// reporting through [onConfirmationRespond].
+/// reporting through [onConfirmationRespond]; a [FlowToolPart] renders a
+/// [FlowTool] card, its blocks copying through [onCodeCopy] like any code
+/// part.
 class FlowMessage extends StatelessWidget {
   const FlowMessage(
     this.message, {
@@ -62,6 +65,8 @@ class FlowMessage extends StatelessWidget {
     this.rejectLabel,
     this.approvedLabel,
     this.rejectedLabel,
+    this.toolInputLabel,
+    this.toolOutputLabel,
     this.leading,
     this.footer,
     this.maxBubbleWidthFraction = 0.75,
@@ -142,6 +147,12 @@ class FlowMessage extends StatelessWidget {
   final String? rejectLabel;
   final String? approvedLabel;
   final String? rejectedLabel;
+
+  /// Host-localized section labels over a tool card's input and output
+  /// blocks, e.g. 'Input' and 'Output'. Null lets each block fall back to
+  /// its language id, as a fence does.
+  final String? toolInputLabel;
+  final String? toolOutputLabel;
 
   /// Slot beside the content, e.g. an avatar.
   final Widget? leading;
@@ -376,13 +387,14 @@ class FlowMessage extends StatelessWidget {
                 child: Text(text, style: style, textAlign: TextAlign.center),
               ),
               // System messages are centered notices; attachments, images,
-              // code, failures and confirmations belong to user and
-              // assistant turns.
+              // code, failures, confirmations and tool calls belong to
+              // user and assistant turns.
               FlowAttachmentPart() ||
               FlowImagePart() ||
               FlowCodePart() ||
               FlowErrorPart() ||
-              FlowConfirmationPart() => const SizedBox.shrink(),
+              FlowConfirmationPart() ||
+              FlowToolPart() => const SizedBox.shrink(),
               FlowCustomPart() =>
                 customPartBuilder?.call(context, message, part) ??
                     const SizedBox.shrink(),
@@ -641,16 +653,44 @@ class FlowMessage extends StatelessWidget {
               ? null
               : () => onConfirmationRespond(confirmation, false),
         ),
+        // Bound whole for the same reason; the blocks' copy intent goes
+        // through [onCodeCopy] like any code part's.
+        FlowToolPart tool => FlowTool(
+          name: tool.name,
+          title: tool.title,
+          detail: tool.detail,
+          status: tool.status,
+          input: tool.input,
+          inputLanguage: tool.inputLanguage,
+          output: tool.output,
+          outputLanguage: tool.outputLanguage,
+          errorMessage: tool.errorMessage,
+          semanticLabel: tool.semanticLabel,
+          inputLabel: toolInputLabel,
+          outputLabel: toolOutputLabel,
+          onCodeCopy: onCodeCopy,
+          copiedCodePart: copiedCodePart,
+          codeCopyTooltip: codeCopyTooltip,
+        ),
         FlowCustomPart() => customPartBuilder?.call(context, message, part),
       };
       if (child == null) continue;
+      // One wrapper type for every part, so the column matches unkeyed
+      // parts by position and a keyed one by its key — which must sit on
+      // the outermost child, where the column sees it. A tool card is
+      // keyed by its call id so its disclosure survives the turn's parts
+      // changing shape; a PageStorageKey rather than a ValueKey, since
+      // the thread remounts its list at the viewport flip and the card
+      // reads its disclosure back through PageStorage.
+      final id = part is FlowToolPart ? part.id : null;
       children.add(
-        children.isEmpty
-            ? child
-            : Padding(
-                padding: const EdgeInsets.only(top: _partGap),
-                child: child,
-              ),
+        Padding(
+          key: id == null ? null : PageStorageKey<String>(id),
+          padding: children.isEmpty
+              ? EdgeInsets.zero
+              : const EdgeInsets.only(top: _partGap),
+          child: child,
+        ),
       );
     }
 

@@ -1,3 +1,7 @@
+## 0.4.0 (unreleased)
+
+- Adds FlowTool, the tool-call card: one mark morphs with the call's status (a still asterisk while staged, turning while it runs, a check or an error glyph once settled), the host's title and primary argument sit on the row, and the input and output render as code blocks behind a disclosure, with a failure readable without a tap. FlowToolPart renders it in a thread, keyed by the provider's call id and copying through FlowThread.onCodeCopy; FlowToolStyle joins the component styles with a FlowTheme.toolStyle default. Metrics are provisional pending a design frame.
+
 ## 0.3.0
 
 - Adds FlowToast and showFlowToast, a floating notice that stacks as a deck, dismisses itself after four seconds and pauses under the pointer.

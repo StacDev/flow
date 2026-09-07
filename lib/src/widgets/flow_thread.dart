@@ -42,6 +42,8 @@ class FlowThread extends StatefulWidget {
     this.rejectLabel,
     this.approvedLabel,
     this.rejectedLabel,
+    this.toolInputLabel,
+    this.toolOutputLabel,
     this.controller,
     this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.onDrag,
     this.padding,
@@ -122,6 +124,13 @@ class FlowThread extends StatefulWidget {
   final String? rejectLabel;
   final String? approvedLabel;
   final String? rejectedLabel;
+
+  /// Host-localized section labels for the thread's tool cards — over
+  /// each card's input and output blocks, e.g. 'Input' and 'Output'.
+  /// Forwarded to each [FlowMessage]; null lets a block fall back to its
+  /// language id.
+  final String? toolInputLabel;
+  final String? toolOutputLabel;
 
   /// Optional external scroll controller.
   final ScrollController? controller;
@@ -347,6 +356,8 @@ class _FlowThreadState extends State<FlowThread> {
                     rejectLabel: widget.rejectLabel,
                     approvedLabel: widget.approvedLabel,
                     rejectedLabel: widget.rejectedLabel,
+                    toolInputLabel: widget.toolInputLabel,
+                    toolOutputLabel: widget.toolOutputLabel,
                     charactersPerSecond: widget.charactersPerSecond,
                     thinkingLabel: widget.thinkingLabel,
                     footer: widget.messageFooter?.call(message),

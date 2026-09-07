@@ -58,3 +58,5 @@ export 'src/styles/flow_thread_list_style.dart';
 export 'src/widgets/flow_toast.dart';
 export 'src/styles/flow_toast_style.dart';
 export 'src/utils/flow_toast_layer.dart' show showFlowToast, FlowToastHandle;
+export 'src/widgets/flow_tool.dart';
+export 'src/styles/flow_tool_style.dart';

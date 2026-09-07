@@ -28,6 +28,7 @@
 /playground/error-state         /playground/  200
 /playground/confirmation        /playground/  200
 /playground/toast               /playground/  200
+/playground/tool                /playground/  200
 /playground/add-to-chat         /playground/  200
 /playground/pill                /playground/  200
 /playground/attachments         /playground/  200

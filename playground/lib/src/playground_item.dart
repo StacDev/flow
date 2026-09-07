@@ -41,6 +41,7 @@ enum PlaygroundItem {
     'flow_confirmation.dart',
   ),
   toast('Toast', PhosphorIconsRegular.bellSimple, 'flow_toast.dart'),
+  tool('Tool', PhosphorIconsRegular.wrench, 'flow_tool.dart'),
   addToChat(
     'Add to Chat',
     PhosphorIconsRegular.plus,

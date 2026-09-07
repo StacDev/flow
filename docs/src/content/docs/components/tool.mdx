@@ -1,0 +1,225 @@
+---
+title: Tool
+description: "The tool-call card: one mark for the call's status, its title and primary argument on a row, and the input and output behind a disclosure."
+sidebar:
+  order: 19
+---
+
+import FlowDemo from '../../../components/FlowDemo.astro';
+
+`FlowTool` is the tool-call card: a record of one call the runtime made,
+with a single mark for where it stands, the host's title and the call's
+primary argument on the header row, and the raw input and output as code
+blocks behind a disclosure. It renders state and never advances on its
+own; the host re-renders the part as its provider reports each step. The
+package ships no strings, so the title, the detail chip, the error
+message and the section labels are all host-written.
+
+Status is the mark, never words: a still asterisk while the call is
+staged, the thinking line's turning asterisk beside a shimmering title
+while it runs, a check once it completes, the error glyph when it fails.
+That leaves no status vocabulary to localize, and keeps the card quiet in
+a turn that made five calls. The chrome is the code block's flat one
+rather than the confirmation's raised card: a tool call is a record of
+the runtime's work, where the confirmation is the host's gate that asks
+for an answer. A failure reads without a tap (the message hangs under the
+header, outside the disclosure), and every card lands collapsed unless
+told otherwise.
+
+## Live run
+
+A call replayed: staged while its arguments stream in, then executing,
+then settled with its output. Each step is a re-render with the next
+status; the card animates the mark and reveals nothing on its own.
+
+<FlowDemo demo="tool" variant="live" height={200} title="A call, replayed on a loop" />
+
+```dart title="Three re-renders"
+// 1. Staged: the arguments still arriving, the input block streaming.
+FlowTool(
+  name: 'search_docs',
+  title: 'Searching the docs',
+  status: FlowToolStatus.pending,
+  input: '{"query": "draft pers',
+)
+
+// 2. Executing: the asterisk turns and the title shimmers.
+FlowTool(
+  name: 'search_docs',
+  title: 'Searching the docs',
+  detail: 'draft persistence',
+  status: FlowToolStatus.running,
+  input: '{"query": "draft persistence"}',
+)
+
+// 3. Settled: the check lands and the output joins the disclosure.
+FlowTool(
+  name: 'search_docs',
+  title: 'Searched the docs',
+  detail: 'draft persistence',
+  status: FlowToolStatus.complete,
+  input: '{"query": "draft persistence"}',
+  output: '{"count": 2, "best": "/components/composer#drafts"}',
+  inputLabel: 'Input',
+  outputLabel: 'Output',
+)
+```
+
+## Complete
+
+The full anatomy, landed open: the settled check, the title, the primary
+argument as a chip, then the input and output as code blocks under the
+host's section labels. Copy on either block hands back a `FlowCodePart`
+carrying that block's text, the same contract as any code block, so one
+clipboard routine serves them all. `initiallyExpanded` is read once, when
+the card mounts; the disclosure is the user's from then on, and
+`onExpandedChanged` reports each toggle.
+
+<FlowDemo demo="tool" variant="complete" height={520} title="The full anatomy" />
+
+```dart title="A settled call, open"
+FlowTool(
+  name: 'search_docs',
+  title: 'Searched the docs',
+  detail: 'draft persistence',
+  status: FlowToolStatus.complete,
+  input: '{"query": "draft persistence"}',
+  output: '{"count": 2, "best": "/components/composer#drafts"}',
+  inputLabel: 'Input',
+  outputLabel: 'Output',
+  initiallyExpanded: true,
+  codeCopyTooltip: 'Copy',
+  copiedCodePart: copied,
+  onCodeCopy: (part) => copy(part),
+)
+```
+
+## Running
+
+Executing: the thinking line's asterisk turns and breathes, and the
+title sweeps from the muted ink to the full one. Pending looks the same
+but still, for a call staged and waiting (its arguments arriving, or an
+approval outstanding; a call that needs one is a `FlowConfirmationPart`
+beside it, not a tool state). Reduced motion renders both static.
+
+<FlowDemo demo="tool" variant="running" height={160} title="An executing call" />
+
+```dart title="Nothing to localize"
+FlowTool(
+  name: 'search_docs',
+  title: 'Searching the docs',
+  detail: 'draft persistence',
+  status: FlowToolStatus.running,
+  input: '{"query": "draft persistence"}',
+  inputLabel: 'Input',
+)
+```
+
+## Error
+
+A failed call carries the error glyph, and the host's message sits under
+the header where it reads without a tap. The input stays behind the
+disclosure for whoever wants to see what was asked; the message is
+announced as a live region, since failures arrive unprompted.
+
+<FlowDemo demo="tool" variant="error" height={200} title="A failed call" />
+
+```dart title="The failure, readable at a glance"
+FlowTool(
+  name: 'fetch_weather',
+  title: 'Fetching the forecast',
+  detail: 'Berlin',
+  status: FlowToolStatus.error,
+  input: '{"city": "Berlin", "units": "metric"}',
+  errorMessage: 'The weather service timed out after 10 seconds.',
+  inputLabel: 'Input',
+)
+```
+
+## In a thread
+
+A `FlowToolPart` in any turn becomes this card. The section labels are
+thread-level, since they are the same words on every card; copy goes
+through `FlowThread.onCodeCopy` like every code block's; and the part's
+`id` (the provider's call id) keys the card, so its disclosure survives
+the turn's parts changing shape as the reply streams on. Keep the
+message's own status `complete` while a tool is pending or running: the
+wait belongs to the part, and a `pending` message renders the thinking
+indicator instead of its parts.
+
+<FlowDemo demo="tool" variant="thread" height={480} title="Two calls in a turn" />
+
+```dart title="The host contract"
+FlowThread(
+  messages: messages,
+  toolInputLabel: 'Input',
+  toolOutputLabel: 'Output',
+  codeCopyTooltip: 'Copy',
+  copiedCodePart: copied,
+  onCodeCopy: (part) => copy(part),
+)
+
+FlowMessageData(
+  id: 'a1',
+  role: FlowMessageRole.assistant,
+  parts: [
+    FlowTextPart('Let me check the docs and the forecast.'),
+    FlowToolPart(
+      id: 'call_1',
+      name: 'search_docs',
+      title: 'Searched the docs',
+      detail: 'draft persistence',
+      status: FlowToolStatus.complete,
+      input: '{"query": "draft persistence"}',
+      output: '{"count": 2, "best": "/components/composer#drafts"}',
+    ),
+    FlowToolPart(
+      id: 'call_2',
+      name: 'fetch_weather',
+      title: 'Fetching the forecast',
+      detail: 'Berlin',
+      status: FlowToolStatus.error,
+      input: '{"city": "Berlin", "units": "metric"}',
+      errorMessage: 'The weather service timed out after 10 seconds.',
+    ),
+    FlowTextPart('Drafts persist per thread. I could not reach the weather service.'),
+  ],
+)
+```
+
+## Restyling
+
+`FlowToolStyle` carries the card's overrides. Install one on
+`FlowTheme.toolStyle` for every card, or pass `style:` to one widget; a
+widget's own style wins field by field, and nulls fall through to the
+tokens. The four accents color the mark, one per status, and never the
+words: the title reads in the ink ramp, so an accent that falls short of
+WCAG AA for text still signals beside it. The nested code blocks follow
+`FlowTheme.codeBlockStyle`, not this style.
+
+```dart title="A branded running mark"
+FlowTool(
+  name: 'search_docs',
+  title: 'Searching the docs',
+  status: FlowToolStatus.running,
+  style: const FlowToolStyle(runningColor: Color(0xFFB65C33)),
+)
+```
+
+Beyond the style class, `padding:` (around the body's blocks) and
+`borderRadius:` override the card's own metrics, the per-component
+convention. The metrics themselves are provisional pending a design
+frame.
+
+## Key API
+
+| Member | What it does |
+|---|---|
+| `name` / `title` / `detail` | The tool's identifier (shown in the code face without a title), the host's label, and the primary argument as a chip |
+| `status` | `FlowToolStatus.pending` (a still asterisk), `running` (turning, the title shimmering), `complete` (a check), `error` (the error glyph) |
+| `input` / `inputLanguage` / `output` / `outputLanguage` | Raw text for the two blocks; `inputLanguage` defaults to `json`, a null `outputLanguage` renders plain |
+| `errorMessage` | Host-written failure, under the header and outside the disclosure; a live region |
+| `initiallyExpanded` / `onExpandedChanged` | The disclosure: read once on mount, then the user's; each toggle reported |
+| `onCodeCopy` / `copiedCodePart` / `codeCopyTooltip` | The blocks' copy contract, shared with every code block |
+| `inputLabel` / `outputLabel` | Host-localized block headers; null falls back to the language id |
+| `style` | `FlowToolStyle` overrides, merged over `FlowTheme.toolStyle` |

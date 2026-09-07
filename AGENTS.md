@@ -81,7 +81,7 @@ Status legend: ⬜ Todo · ✅ Done
 | 14 | Menu | icon-trigger menu: groups, submenus, toggles; sheet on phones | ✅ |
 | 15 | Attachments | images and files, type pill; built-in picker and web file drop; videos pending | ✅ |
 | 16 | Preview | full-screen image viewer: zoom, paging | ✅ |
-| 17 | Tool | TBD | ⬜ |
+| 17 | Tool | pending, running, complete, error; morphing status mark; collapsible input/output blocks; parts render in a thread | ✅ |
 | 18 | Suggestion & Suggestion Group | plain & outlined rows; scroll, wrap, column | ✅ |
 | 19 | Confirmation | pending, approved, rejected; approve/reject buttons; parts render in a thread | ✅ |
 | 20 | Error state | failure card + retry pill; failed assistant turns render it automatically | ✅ |
