@@ -20,29 +20,13 @@ One line in your pubspec:
 
 ```yaml title="pubspec.yaml"
 dependencies:
-  flow_ui: ^0.2.0
+  flow_ui: ^0.3.0
 ```
 
 That brings in the Flutter SDK, `material_ui`, `file_selector` — the
 flutter.dev plugin behind the composer's attach button — and
 `google_fonts`, which fetches Google Sans and Google Sans Code at
 runtime. Nothing else.
-
-<Aside type="caution" title="What the platforms need">
-The fetched typefaces need network access on every app:
-`android.permission.INTERNET` in your main Android manifest, and the
-`com.apple.security.network.client` entitlement in a sandboxed macOS
-build. Without them the text falls back to the platform face.
-
-Apps that additionally call `showFlowAttachmentPicker` (or wire up
-`FlowComposer.onAttachmentsPicked`) need
-`com.apple.security.files.user-selected.read-only` in **both**
-`macos/Runner/DebugProfile.entitlements` and
-`macos/Runner/Release.entitlements`, or the file dialog opens onto
-nothing. There is no Android permission and no iOS plist string for
-attaching — apps that never attach files configure nothing beyond the
-network access above.
-</Aside>
 
 ## Wire the theme
 

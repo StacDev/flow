@@ -62,7 +62,7 @@
 
 ```yaml
 dependencies:
-  flow_ui: ^0.2.0
+  flow_ui: ^0.3.0
 ```
 
 Install the theme once (optional — without it, components fall back to a

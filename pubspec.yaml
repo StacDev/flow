@@ -1,6 +1,6 @@
 name: flow_ui
 description: Flow UI is an open-source Flutter UI library to build production-grade Chat & AI assistant interfaces.
-version: 0.2.0
+version: 0.3.0
 homepage: https://flowui.stac.dev/
 repository: https://github.com/StacDev/flow_ui
 issue_tracker: https://github.com/StacDev/flow_ui/issues
