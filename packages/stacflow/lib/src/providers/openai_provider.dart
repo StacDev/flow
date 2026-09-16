@@ -110,11 +110,9 @@ final class _OpenAITurn extends ProviderTurn {
   static const Set<String> _schemaMeta = {r'$schema', r'$id', r'$comment'};
 
   String? _finishReason;
-  final Map<int, String> _callIds = {};
-  final Map<int, StringBuffer> _held = {};
-  final Set<int> _closed = {};
-  int? _openIndex;
-  int _nextIndex = 0;
+  final Map<int, _PendingCall> _calls = {};
+  int? _liveIndex;
+  int? _lastIndex;
 
   @override
   Uri get url {
@@ -252,6 +250,7 @@ final class _OpenAITurn extends ProviderTurn {
   void onFrame(SseFrame frame, TurnEmitter out) {
     if (frame.data.trim() == '[DONE]') {
       _finishReason ??= 'stop';
+      _flushCalls(out);
       out.complete();
       return;
     }
@@ -275,7 +274,7 @@ final class _OpenAITurn extends ProviderTurn {
       final finish = stringAt(choice, 'finish_reason');
       if (finish != null) {
         _finishReason = finish;
-        _closeOpen(out);
+        _flushCalls(out);
         if (finish == 'content_filter') {
           out.fail(
             const ProviderFailure(
@@ -304,52 +303,58 @@ final class _OpenAITurn extends ProviderTurn {
     final named = name != null && name.isNotEmpty;
     final index =
         intAt(call, 'index') ??
-        (!named && _openIndex != null ? _openIndex! : _nextIndex);
-    if (_closed.contains(index)) {
-      out.fail(
-        const ProviderFailure(
-          code: ErrorCodes.providerError,
-          message: 'The provider interleaved chunks of different tool calls.',
-          retryable: false,
-          status: 200,
-          upstreamCode: 'interleaved_tool_calls',
-        ),
-      );
+        (named ? _calls.length : _lastIndex ?? _calls.length);
+    _lastIndex = index;
+    final pending = _calls[index] ??= _PendingCall();
+    if (named && pending.name == null) {
+      pending
+        ..name = name
+        ..providerId = stringAt(call, 'id');
+    }
+    if (_liveIndex == index) {
+      if (fragment != null && fragment.isNotEmpty) {
+        out.toolCallDelta(pending.id, fragment);
+      }
       return;
     }
-    var id = _callIds[index];
-    if (id == null) {
-      if (!named) {
-        (_held[index] ??= StringBuffer()).write(fragment ?? '');
-        return;
-      }
-      if (_openIndex case final open? when open != index) _closed.add(open);
-      id = out.toolCallStart(name: name, providerCallId: stringAt(call, 'id'));
-      _callIds[index] = id;
-      _openIndex = index;
-      _nextIndex = index + 1;
-      final held = _held.remove(index);
-      if (held != null && held.isNotEmpty) {
-        out.toolCallDelta(id, held.toString());
-      }
-    }
-    if (fragment != null && fragment.isNotEmpty) {
-      out.toolCallDelta(id, fragment);
+    if (fragment != null && fragment.isNotEmpty) pending.args.write(fragment);
+    final pendingName = pending.name;
+    if (_liveIndex == null && pendingName != null) {
+      _liveIndex = index;
+      pending.id = out.toolCallStart(
+        name: pendingName,
+        providerCallId: pending.providerId,
+      );
+      final held = pending.args.toString();
+      pending.args.clear();
+      if (held.isNotEmpty) out.toolCallDelta(pending.id, held);
     }
   }
 
-  void _closeOpen(TurnEmitter out) {
-    final open = _openIndex;
-    if (open == null) return;
-    final id = _callIds[open];
-    if (id != null) out.toolCallEnd(id);
-    _closed.add(open);
-    _openIndex = null;
+  void _flushCalls(TurnEmitter out) {
+    if (_liveIndex case final live?) {
+      _liveIndex = null;
+      if (_calls.remove(live) case final pending?) out.toolCallEnd(pending.id);
+    }
+    final indices = _calls.keys.toList()..sort();
+    for (final index in indices) {
+      final pending = _calls.remove(index)!;
+      final name = pending.name;
+      if (name == null) continue;
+      final id = out.toolCallStart(
+        name: name,
+        providerCallId: pending.providerId,
+      );
+      final args = pending.args.toString();
+      if (args.isNotEmpty) out.toolCallDelta(id, args);
+      out.toolCallEnd(id);
+    }
   }
 
   @override
   void onEnd(TurnEmitter out) {
     if (_finishReason != null) {
+      _flushCalls(out);
       out.complete();
     } else {
       out.transportFailure(
@@ -382,4 +387,11 @@ final class _OpenAITurn extends ProviderTurn {
           : null,
     );
   }
+}
+
+final class _PendingCall {
+  String? name;
+  String? providerId;
+  String id = '';
+  final StringBuffer args = StringBuffer();
 }
