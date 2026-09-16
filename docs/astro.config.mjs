@@ -140,10 +140,6 @@ export default defineConfig({
 					items: ['getting-started', 'theming'],
 				},
 				{
-					label: 'StacFlow',
-					items: ['stacflow/getting-started', 'stacflow/providers', 'stacflow/tools'],
-				},
-				{
 					label: 'Components',
 					items: [{ autogenerate: { directory: 'components' } }],
 				},

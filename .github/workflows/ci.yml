@@ -146,11 +146,6 @@ jobs:
 
       - run: flutter pub get
 
-      - name: Lock matches contracts/
-        run: |
-          test "$(./tool/contracts_hash.sh)" = "$(cat contracts.lock)" \
-            || { echo "::error::contracts/ changed without updating contracts.lock: run ./tool/contracts_hash.sh > contracts.lock"; exit 1; }
-
       - name: Generated Dart matches contracts/
         run: |
           dart run tool/contracts_gen.dart

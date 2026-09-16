@@ -109,7 +109,6 @@ String _describe(SseEvent event) => switch (event) {
   UsageEvent() => 'usage ${jsonEncode(event.toJson())}',
   ErrorEvent() => 'error ${jsonEncode(event.toJson())}',
   DoneEvent() => 'done ${jsonEncode(event.toJson())}',
-  UiPayloadEvent() => 'ui_payload ${jsonEncode(event.toJson())}',
   ToolCallStartEvent() =>
     'tool_call start ${event.toolCallId} ${event.toolName} '
         '${event.permissionClass.wire}',

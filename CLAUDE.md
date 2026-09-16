@@ -19,7 +19,7 @@ The theme, the conversation components (message, thread, streaming text, actions
 - `packages/flow_ui/` — the published package: `lib/`, `example/` (the README's chat screen against Gemini), `assets/`, its own flutter_lints `analysis_options.yaml` and `.pubignore`.
 - `packages/stacflow/` — the StacFlow SDK package (see "SDK package"), with `example/` (the README's chat screen against Gemini; flutter_lints like the flow_ui example).
 - `playground/` — the Flow UI Playground: a full Flutter app and workspace member depending on `flow_ui: ^0.4.0`. Use it to demo and manually exercise components (every component has a stage demo, with variant pills and code snippets).
-- `docs/` — the Astro site behind flowui.stac.dev. `contracts/`, `contracts.lock` and `tool/` — the SDK wire contract and its codegen.
+- `docs/` — the Astro site behind flowui.stac.dev. `contracts/` and `tool/` — the SDK wire contract and its codegen.
 
 ## Commands
 
@@ -55,13 +55,11 @@ flutter run -d chrome    # or any device
 - The API key is a private field set on exactly one header, and never appears in URLs, logs, `toString` or error text.
 - No tests for now. Verify with `dart analyze --fatal-infos`, the smoke script (`cd packages/stacflow && dart run --define=PROVIDER=gemini --define=GEMINI_API_KEY=... tool/smoke.dart`, also `anthropic` and `openai`; `--define=ABORT_AFTER_FIRST_DELTA=true` and `--define=IMAGE=path.png` exercise abort and image input; `--define=TOOLS=true` registers a `get_time` tool and runs the loop, with `TOOL_PERMISSION=destructive` and `DECLINE=true` for the approval paths), and the example app (`cd packages/stacflow/example && flutter run` with the key in `lib/env.dart`, copied from `lib/env.example.dart` and gitignored; the `stacflow-example` entry in `.claude/launch.json` serves it on port 8124). Keep the example the runnable form of the README quickstart, against Gemini only, with the `set_theme` tool as its one tool.
 
-`contracts/` is the wire contract (SSE events, REST surface, error codes), mirrored into the private stacflow-cloud repo; `contracts.lock` is its hash and CI fails when they disagree. After editing anything under `contracts/`:
+`contracts/` is the wire contract (SSE events, error codes); CI regenerates the Dart from it and fails on drift. After editing anything under `contracts/`:
 
 ```bash
 dart run tool/contracts_gen.dart                      # regenerates packages/stacflow/lib/src/generated
 dart format packages/stacflow/lib/src/generated
-./tool/contracts_hash.sh > contracts.lock
-./tool/sync_contracts.sh                              # mirrors into ../stacflow-cloud; commit there separately
 ```
 
 Never hand-edit the generated directory: the analyzer excludes it and CI regenerates it.

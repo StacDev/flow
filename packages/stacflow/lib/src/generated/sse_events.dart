@@ -21,7 +21,6 @@ sealed class SseEvent {
         'start' => StartEvent.fromJson(data),
         'delta' => DeltaEvent.fromJson(data),
         'tool_call' => ToolCallEvent.fromJson(data),
-        'ui_payload' => UiPayloadEvent.fromJson(data),
         'usage' => UsageEvent.fromJson(data),
         'error' => ErrorEvent.fromJson(data),
         'done' => DoneEvent.fromJson(data),
@@ -277,30 +276,6 @@ final class ToolCallEndEvent extends ToolCallEvent {
     'seq': seq,
     'tool_call_id': toolCallId,
     'args': args,
-  };
-}
-
-final class UiPayloadEvent extends SseEvent {
-  const UiPayloadEvent({
-    required this.seq,
-    required this.surfaceId,
-    required this.a2ui,
-  });
-
-  factory UiPayloadEvent.fromJson(Map<String, dynamic> json) => UiPayloadEvent(
-    seq: json['seq'] as int,
-    surfaceId: json['surface_id'] as String,
-    a2ui: (json['a2ui'] as Map).cast<String, dynamic>(),
-  );
-
-  final int seq;
-  final String surfaceId;
-  final Map<String, dynamic> a2ui;
-
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    'seq': seq,
-    'surface_id': surfaceId,
-    'a2ui': a2ui,
   };
 }
 

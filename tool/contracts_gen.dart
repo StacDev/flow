@@ -6,8 +6,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:yaml/yaml.dart';
-
 const _outDir = 'packages/stacflow/lib/src/generated';
 
 const _header = '''
@@ -579,136 +577,6 @@ String _genErrorCodes(Map<String, dynamic> doc) {
   return b.toString();
 }
 
-// ───────────────────────── rest_models.dart / api_paths.dart ─────────────────────────
-
-String _genRestModels(Map<String, dynamic> api) {
-  final schemas = _asMap(_asMap(api['components'])['schemas']);
-  final enums = EnumReg();
-  final classNames = <String>{};
-  final sink = <ClassSpec>[];
-  final classes = <ClassSpec>[];
-  final sealedParents = StringBuffer();
-
-  schemas.forEach((name, raw) {
-    final s = _asMap(raw);
-    if (_primRefs.containsKey(name)) return; // string prims
-    if (name == 'FailureClass') return; // shared with sse_events.dart
-    final oneOf = s['oneOf'] as List?;
-    if (oneOf != null) {
-      final disc = _asMap(s['discriminator']);
-      final prop = disc['propertyName'] as String;
-      final mapping = _asMap(disc['mapping'])
-          .map((k, v) => MapEntry(k, _refName(v as String)));
-      sealedParents
-        ..writeln('sealed class $name {')
-        ..writeln('  const $name();\n')
-        ..writeln('  factory $name.fromJson(Map<String, dynamic> json) =>')
-        ..writeln("      switch (json['$prop'] as String?) {");
-      mapping.forEach((wire, cls) {
-        sealedParents.writeln("        '$wire' => $cls.fromJson(json),");
-      });
-      sealedParents
-        ..writeln('        _ => Unknown$name(json),')
-        ..writeln('      };\n')
-        ..writeln('  Map<String, dynamic> toJson();')
-        ..writeln('}\n')
-        ..writeln(
-          '/// Passthrough for part types this build does not know (additive).',
-        )
-        ..writeln('final class Unknown$name extends $name {')
-        ..writeln('  const Unknown$name(this.json);')
-        ..writeln('  final Map<String, dynamic> json;')
-        ..writeln('  @override')
-        ..writeln('  Map<String, dynamic> toJson() => json;')
-        ..writeln('}\n');
-      return;
-    }
-    if (s['enum'] != null) {
-      enums.register(name, (s['enum'] as List).cast<String>());
-      return;
-    }
-    if (s['type'] == 'string') return; // patterned string prims (ids)
-    var parent = _parentFor(name, schemas);
-    classes.add(
-      _classFromObjectSchema(
-        name,
-        s,
-        enums: enums,
-        classNames: classNames,
-        sink: sink,
-        extendsName: parent,
-      ),
-    );
-  });
-
-  final b = StringBuffer()
-    ..writeln(_header)
-    ..writeln('/// REST component models (contracts/rest-api.openapi.yaml).')
-    ..writeln(
-      '/// Request/response envelopes inline in path definitions are shaped by',
-    )
-    ..writeln('/// the transport layer; only named components are generated.')
-    ..writeln('library;\n')
-    ..writeln("import 'sse_events.dart' show FailureClass;\n")
-    ..writeln(enums.emit())
-    ..writeln(sealedParents);
-  for (final c in [...sink, ...classes]) {
-    b.writeln(_emitClass(c));
-  }
-  return b.toString();
-}
-
-/// Which oneOf parent (if any) a component belongs to, via discriminator maps.
-String? _parentFor(String name, Map<String, dynamic> schemas) {
-  String? found;
-  schemas.forEach((parent, raw) {
-    final s = _asMap(raw);
-    if (s['oneOf'] == null) return;
-    final mapping = _asMap(_asMap(s['discriminator'])['mapping']);
-    for (final v in mapping.values) {
-      if (_refName(v as String) == name) found = parent;
-    }
-  });
-  return found;
-}
-
-String _genApiPaths(Map<String, dynamic> api) {
-  final paths = _asMap(api['paths']);
-  final b = StringBuffer()
-    ..writeln(_header)
-    ..writeln('/// Path constants/builders for the /v1 surface.')
-    ..writeln('abstract final class ApiPaths {');
-  paths.forEach((path, _) {
-    final segs = path.split('/').where((s) => s.isNotEmpty).toList();
-    final params = <String>[];
-    final nameParts = <String>[];
-    for (final s in segs) {
-      if (s.startsWith('{')) {
-        params.add(_camel(s.substring(1, s.length - 1)));
-      } else if (s != 'v1') {
-        nameParts.add(s);
-      }
-    }
-    var name = _camel(nameParts.join('_'));
-    if (params.isNotEmpty) {
-      name = '${name}By${params.map(_pascal).join('And')}';
-      final args = params.map((p) => 'String $p').join(', ');
-      final interp = segs
-          .map(
-            (s) => s.startsWith('{')
-                ? '\$${_camel(s.substring(1, s.length - 1))}'
-                : s,
-          )
-          .join('/');
-      b.writeln("  static String $name($args) => '/$interp';");
-    } else {
-      b.writeln("  static const String $name = '$path';");
-    }
-  });
-  b.writeln('}');
-  return b.toString();
-}
-
 // ───────────────────────── main ─────────────────────────
 
 void main() {
@@ -718,16 +586,9 @@ void main() {
   final errors = jsonDecode(
     File('contracts/error-codes.json').readAsStringSync(),
   ) as Map<String, dynamic>;
-  final api = jsonDecode(
-    jsonEncode(
-      loadYaml(File('contracts/rest-api.openapi.yaml').readAsStringSync()),
-    ),
-  ) as Map<String, dynamic>;
 
   Directory(_outDir).createSync(recursive: true);
   File('$_outDir/sse_events.dart').writeAsStringSync(_genSse(sse));
   File('$_outDir/error_codes.dart').writeAsStringSync(_genErrorCodes(errors));
-  File('$_outDir/rest_models.dart').writeAsStringSync(_genRestModels(api));
-  File('$_outDir/api_paths.dart').writeAsStringSync(_genApiPaths(api));
-  stdout.writeln('generated 4 files into $_outDir');
+  stdout.writeln('generated 2 files into $_outDir');
 }

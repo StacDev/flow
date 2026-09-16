@@ -5,8 +5,7 @@
 <h1 align="center">stacflow</h1>
 
 <p align="center">
-  📚 <a href="https://flowui.stac.dev/stacflow/getting-started/">Documentation</a>
-  · 🎨 <a href="https://pub.dev/packages/flow_ui">flow_ui</a>
+  🎨 <a href="https://pub.dev/packages/flow_ui">flow_ui</a>
   · 🧩 <a href="https://flowui.stac.dev/playground">Playground</a>
 </p>
 
@@ -171,8 +170,8 @@ replayed to the model in later turns, so it keeps knowing what it did.
 A key compiled into a shipped app can be extracted from the binary. Use
 `--dart-define` or `--dart-define-from-file=env.json` while developing.
 For production, put the key behind a server you own and point
-`OpenAIProvider(baseUrl: ...)` or the other providers' `baseUrl` at it, or
-wait for StacFlow Cloud. On the web, Claude requests carry the header
+`OpenAIProvider(baseUrl: ...)` or the other providers' `baseUrl` at it. On
+the web, Claude requests carry the header
 Anthropic requires for direct browser calls, which means the key travels
 to the browser: fine for a demo, not for a public site.
 
@@ -193,10 +192,9 @@ the view.
 
 ## Not in 0.1
 
-Thread persistence, generative UI and image generation. The `SseEvent`
-types, `TurnTransport` and `TurnRequest` are public so a custom provider
-can be written today; a hosted gateway that speaks the same events comes
-later.
+Thread persistence and image generation. The `SseEvent` types,
+`TurnTransport` and `TurnRequest` are public so a custom provider can be
+written today.
 
 ## License
 

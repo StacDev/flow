@@ -396,7 +396,6 @@ final class StacFlowChat {
         }
       case ToolCallStartEvent():
       case ToolCallEndEvent():
-      case UiPayloadEvent():
       case SseUnknownEvent():
         break;
     }

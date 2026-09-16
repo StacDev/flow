@@ -2,21 +2,16 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://stacflow.ai/contracts/sse-events.schema.json",
   "title": "StacFlow SSE protocol v1",
-  "description": "The normalized event stream returned by POST /v1/sessions/{session_id}/messages. Framing: Content-Type text/event-stream; the SSE `event:` field carries the event name; `data:` carries exactly one JSON object on one line; the SSE `id:` field carries the decimal `seq`. A comment heartbeat `: ping` is sent every 15 seconds. `seq` is 0-based and strictly monotonic per stream with no gaps. Stream-scoped identity is stated once in `start` and never repeated. Every stream ends with exactly one `done`; a socket close without `done` is a retryable transport failure, never a protocol state. This schema is also the internal adapter contract: local mode's Dart provider adapters emit the same event union. Evolution is additive-only after the v1 freeze; decoders must ignore unknown event names and unknown fields.",
+  "description": "The normalized event stream a transport produces for one model segment. Framing: Content-Type text/event-stream; the SSE `event:` field carries the event name; `data:` carries exactly one JSON object on one line; the SSE `id:` field carries the decimal `seq`. `seq` is 0-based and strictly monotonic per stream with no gaps. Stream-scoped identity is stated once in `start` and never repeated. Every stream ends with exactly one `done`; a socket close without `done` is a retryable transport failure, never a protocol state. The Dart provider adapters emit this event union directly. Evolution is additive-only; decoders must ignore unknown event names and unknown fields.",
   "x-stacflow-protocol": {
     "version": 1,
     "events": {
       "start": "#/$defs/StartEvent",
       "delta": "#/$defs/DeltaEvent",
       "tool_call": "#/$defs/ToolCallEvent",
-      "ui_payload": "#/$defs/UiPayloadEvent",
       "usage": "#/$defs/UsageEvent",
       "error": "#/$defs/ErrorEvent",
       "done": "#/$defs/DoneEvent"
-    },
-    "reserved": {
-      "tool_result": "Reserved for a future gateway-executed tool lane; in v1 all tools execute on the client and results travel in the tool_results continuation POST.",
-      "resume": "The seq / SSE id discipline exists so a Last-Event-ID resume endpoint can be added additively; v1 reconnect = refetch the thread and re-POST idempotently."
     },
     "ordering": [
       "Per tool call: phase start, then zero or more phase delta, then phase end.",
@@ -30,7 +25,6 @@
     { "$ref": "#/$defs/StartEvent" },
     { "$ref": "#/$defs/DeltaEvent" },
     { "$ref": "#/$defs/ToolCallEvent" },
-    { "$ref": "#/$defs/UiPayloadEvent" },
     { "$ref": "#/$defs/UsageEvent" },
     { "$ref": "#/$defs/ErrorEvent" },
     { "$ref": "#/$defs/DoneEvent" }
@@ -89,7 +83,7 @@
     },
     "ToolCallEvent": {
       "type": "object",
-      "description": "One tool call, streamed in three phases. `args` at phase end is complete canonical JSON and is authoritative over concatenated deltas. `permission_class` comes from the merged manifest so the SDK can pre-stage confirmation chrome before args finish streaming. `executor` is \"client\" in v1 (\"server\" reserved).",
+      "description": "One tool call, streamed in three phases. `args` at phase end is complete canonical JSON and is authoritative over concatenated deltas. `permission_class` comes from the registered tool so the SDK can stage the confirmation card before the arguments finish streaming. `executor` is \"client\" in v1 (\"server\" reserved).",
       "oneOf": [
         {
           "type": "object",
@@ -128,20 +122,9 @@
         }
       ]
     },
-    "UiPayloadEvent": {
-      "type": "object",
-      "description": "Exactly one complete A2UI v0.9 JSONL message, extracted and re-framed by the gateway (buffered to newline / tool-end server-side). Opaque to the gateway beyond size caps; validated client-side against the registered catalog.",
-      "properties": {
-        "seq": { "$ref": "#/$defs/Seq" },
-        "surface_id": { "type": "string" },
-        "a2ui": { "type": "object", "additionalProperties": true }
-      },
-      "required": ["seq", "surface_id", "a2ui"],
-      "additionalProperties": true
-    },
     "UsageEvent": {
       "type": "object",
-      "description": "One per provider call; additive across a stream. Informational to the client — the gateway's persisted record is authoritative for metering.",
+      "description": "One per provider call; additive across a stream.",
       "properties": {
         "seq": { "$ref": "#/$defs/Seq" },
         "provider_call": { "type": "integer", "minimum": 0 },
