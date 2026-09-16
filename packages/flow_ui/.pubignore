@@ -1,0 +1,25 @@
+# Replaces .gitignore for publishing. Unrooted so example/ stays covered when
+# publishing from outside a git checkout.
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+*.iml
+*.ipr
+*.iws
+.idea/
+.env
+.metadata
+pubspec.lock
+**/doc/api/
+.dart_tool/
+.flutter-plugins-dependencies
+build/
+coverage/
+doc/

@@ -1,0 +1,136 @@
+---
+title: Tools
+description: Let the model take actions in your app, with a card per call and a confirmation before destructive ones.
+sidebar:
+  order: 3
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A tool is an action the app lets the model take: switch the theme, create
+a task, fetch a statement. You register it with a name, a description the
+model reads, a JSON Schema for its arguments and the handler that runs
+it. The model decides when to call it, the SDK runs the handler, and the
+model finishes its reply with the result in hand.
+
+## Registering a tool
+
+```dart
+final themeMode = ValueNotifier(ThemeMode.system);
+
+final chat = StacFlowChat(
+  provider: GeminiProvider(apiKey: key),
+  tools: [
+    Tool(
+      name: 'set_theme',
+      description: 'Switches the app between light and dark mode.',
+      parameters: const {
+        'type': 'object',
+        'properties': {
+          'mode': {
+            'type': 'string',
+            'enum': ['light', 'dark', 'system'],
+            'description': 'The theme to apply.',
+          },
+        },
+        'required': ['mode'],
+      },
+      label: 'Set theme',
+      detail: (args) => args['mode'] as String?,
+      run: (call) {
+        themeMode.value = ThemeMode.values.byName(call.args['mode'] as String);
+        return {'mode': call.args['mode']};
+      },
+    ),
+  ],
+);
+```
+
+`name` is what the model calls: letters, digits, underscores and dashes,
+unique within the chat. `description` and `parameters` are prompts in
+disguise; write them for the model. `label` titles the card and `detail`
+picks the chip beside it from a call's arguments. The handler receives a
+`ToolCall` with the arguments and returns any JSON-encodable value.
+
+## Permission and confirmation
+
+Every tool carries a permission class, and the class decides whether the
+user is asked first:
+
+| Permission | Runs |
+|---|---|
+| `read` | Silently. |
+| `write` (default) | Without asking, unless the tool sets `confirm: true`. |
+| `destructive` | After the user approves the confirmation card, always. |
+
+The card's question comes from `confirmation`, a function of the
+arguments, or `Allow <label> to run?` when the tool writes none. A
+decline goes back to the model as a declined result, so it can
+acknowledge instead of stalling.
+
+```dart
+Tool(
+  name: 'delete_folder',
+  description: 'Deletes a folder and everything in it.',
+  permission: ToolPermission.destructive,
+  label: 'Delete folder',
+  confirmation: (args) => 'Delete ${args['path']} and everything in it?',
+  run: (call) => store.deleteFolder(call.args['path'] as String),
+)
+```
+
+## What the thread shows
+
+Every call gets a card in the reply: pending while the arguments stream,
+running while the handler works, then complete with the result or failed
+with a message. The arguments and the result sit behind a disclosure. A
+gated call adds the confirmation card under its tool card; approving runs
+the handler, rejecting marks the call declined. The reply stays in flight
+across the whole turn, so the stop button keeps working while a handler
+runs or a confirmation waits.
+
+To render your own content under a card, a table for a query result for
+instance, give the view a `toolBodyBuilder`. It is called for every call
+in every status with the call's `ToolCallRecord`; return null for none.
+
+```dart
+StacFlowChatView(
+  chat: chat,
+  toolBodyBuilder: (context, record) =>
+      record.name == 'fetch_statement' && record.status == ToolCallStatus.ok
+          ? StatementTable(rows: record.result as List)
+          : null,
+)
+```
+
+## Results, errors and timeouts
+
+A handler's return value is sent to the model as JSON; a `Map` or `List`
+goes as is, anything else becomes text. Throw a `ToolException` to fail
+in your own words; the message reaches the card and the model. Any other
+exception fails the call with a generic message. Each call has a
+`timeout`, 30 seconds by default. A stop, a timeout or the end of the turn
+completes `call.aborted`, so long handlers should watch `call.isAborted`.
+
+<Aside type="note" title="Rounds">
+	A turn may call tools in up to `maxToolRounds` segments, 8 by default,
+	before it ends with a retryable error, so a model that keeps calling
+	tools without answering cannot loop forever.
+</Aside>
+
+## History
+
+Calls and their results are part of the conversation the model sees.
+Within a turn the SDK continues the model's reply with every result;
+across turns it replays earlier calls and results in each provider's own
+format, so the model keeps knowing what it did. `ChatState.toolCalls`
+holds the records behind the cards, and `retry`, `regenerate` and
+`editAndResend` drop the records of the replies they remove, so a rerun
+may run handlers again.
+
+## Headless
+
+`StacFlowChat` runs tools without the view. `chat.state.toolCalls` holds
+every call, `respondToToolCall(id, approved: true)` answers a waiting
+confirmation, and `runToolLoop` from `package:stacflow/stacflow.dart` is
+the loop itself, usable with any `TurnTransport`.

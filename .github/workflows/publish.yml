@@ -1,33 +1,62 @@
-# One release trigger, everything ships: pushing a version tag publishes
-# the package to pub.dev AND deploys the docs site — playground included,
-# it's built into dist/playground/ — to Cloudflare Pages.
+# One tag per package release:
 #
-#   git tag v0.2.0 && git push origin v0.2.0
+#   git tag flow_ui-v0.4.0 && git push origin flow_ui-v0.4.0
 #
-# Package authentication is OIDC — no token lives in this repo. It requires
-# automated publishing to be enabled once on pub.dev (flow_ui → Admin →
-# Automated publishing) for StacDev/flow_ui with the tag pattern
-# `v{{version}}`.
+# publishes packages/flow_ui to pub.dev and deploys the docs site (playground
+# included) to Cloudflare Pages. Publishing is OIDC: pub.dev → flow_ui → Admin
+# → Automated publishing must list StacDev/flow_ui with the tag pattern
+# `flow_ui-v{{version}}`. A future package gets its own tag glob below, a
+# `case` line in `meta`, and its own pub.dev tag pattern.
 #
-# The site deploy needs one-time repo configuration:
-#   secrets: CLOUDFLARE_API_TOKEN  (Pages:Edit permission)
-#            CLOUDFLARE_ACCOUNT_ID
-#   variable: CLOUDFLARE_PAGES_PROJECT  (the Pages project serving
-#             flowui.stac.dev)
+# Site deploy configuration: secrets CLOUDFLARE_API_TOKEN (Pages:Edit) and
+# CLOUDFLARE_ACCOUNT_ID; variable CLOUDFLARE_PAGES_PROJECT.
 name: Publish
 
 on:
   push:
-    tags: ['v[0-9]+.[0-9]+.[0-9]+*']
-  # Redeploy the site without cutting a release, e.g. after a docs fix.
+    tags:
+      - 'flow_ui-v[0-9]+.[0-9]+.[0-9]+*'
+      - 'stacflow-v[0-9]+.[0-9]+.[0-9]+*'
+  # Redeploy the site without cutting a release.
   workflow_dispatch:
 
 jobs:
-  # The quality gate: the release only ships with full pub.dev points.
-  # Comparing granted against pana's own max (160 today) keeps the gate
-  # honest if pub.dev ever raises the ceiling.
+  meta:
+    name: Resolve package from tag
+    runs-on: ubuntu-latest
+    outputs:
+      package: ${{ steps.tag.outputs.package }}
+      dir: ${{ steps.tag.outputs.dir }}
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: tag
+        shell: bash
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != push ]; then
+            printf 'package=flow_ui\ndir=packages/flow_ui\nversion=\n' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          tag="$GITHUB_REF_NAME"
+          package="${tag%-v*}"
+          version="${tag#"$package-v"}"
+          case "$package" in
+            flow_ui) dir=packages/flow_ui ;;
+            stacflow) dir=packages/stacflow ;;
+            *) echo "::error::no package for tag $tag"; exit 1 ;;
+          esac
+          pubspec_version=$(sed -n 's/^version:[[:space:]]*//p' "$dir/pubspec.yaml" | tr -d '[:space:]')
+          if [ "$version" != "$pubspec_version" ]; then
+            echo "::error::tag says $version, $dir/pubspec.yaml says $pubspec_version"
+            exit 1
+          fi
+          printf 'package=%s\ndir=%s\nversion=%s\n' "$package" "$dir" "$version" >> "$GITHUB_OUTPUT"
+
+  # The release only ships with full pub.dev points.
   pana:
     name: Pana score gate
+    needs: meta
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -42,11 +71,11 @@ jobs:
       - name: Require a perfect score
         run: |
           dart pub global activate pana
-          dart pub global run pana --no-warning --json . > pana.json
+          dart pub global run pana --no-warning --json "${{ needs.meta.outputs.dir }}" > pana.json
           granted=$(jq -r '.scores.grantedPoints' pana.json)
           max=$(jq -r '.scores.maxPoints' pana.json)
           echo "pana: $granted / $max"
-          if [ "$granted" != "$max" ]; then
+          if [ "$granted" -lt "$max" ]; then
             echo "Points were dropped in these sections:"
             jq -r '.report.sections[]
                    | select(.grantedPoints < .maxPoints)
@@ -56,22 +85,21 @@ jobs:
           fi
 
   package:
-    # Manual dispatches redeploy the site only — pub.dev is tags-only.
     if: github.event_name == 'push'
-    needs: pana
+    needs: [meta, pana]
     permissions:
-      id-token: write # Required to mint the OIDC token pub.dev verifies.
+      id-token: write
     uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      working-directory: ${{ needs.meta.outputs.dir }}
 
   site:
     name: Docs + playground
-    needs: pana
+    needs: [meta, pana]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
-      # `build:site` compiles the playground to wasm before Astro builds,
-      # so this job needs both toolchains — the same build CI validates.
       - uses: subosito/flutter-action@v2
         with:
           channel: stable

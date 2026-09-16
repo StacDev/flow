@@ -1,0 +1,100 @@
+---
+title: Providers
+description: Gemini, OpenAI and Claude, called directly with your own key, and how each one is configured.
+sidebar:
+  order: 2
+---
+
+Every provider streams the reply, takes image attachments as input,
+runs the tools you register, and maps the model's failures to the same
+error card. Each constructor takes
+`model`, `baseUrl`, extra `headers`, an `httpClient`, the `models` a
+selector should offer, and `firstByteTimeout` and `idleTimeout`.
+
+## Gemini
+
+```dart
+GeminiProvider(
+  apiKey: const String.fromEnvironment('GEMINI_API_KEY'),
+  model: 'gemini-3.6-flash',
+)
+```
+
+An AI Studio key. Works from the browser as well as from apps. Image
+input: PNG, JPEG, WebP, HEIC and HEIF. Tool schemas are sent in the
+OpenAPI subset Gemini accepts, so keywords outside it are dropped; Gemini
+3 models keep their default temperature best, and their call ids and
+thought signatures are echoed back within the turn as they require.
+
+## OpenAI, and compatible servers
+
+```dart
+OpenAIProvider(
+  apiKey: const String.fromEnvironment('OPENAI_API_KEY'),
+  model: 'gpt-5-mini',
+)
+```
+
+Speaks Chat Completions, which is what every compatible server also
+implements. Point `baseUrl` at Ollama, Groq, OpenRouter, LM Studio, vLLM
+or a proxy of your own:
+
+```dart
+OpenAIProvider(
+  apiKey: 'ollama',
+  model: 'llama3.2',
+  baseUrl: 'http://localhost:11434/v1',
+  includeUsage: false,
+)
+```
+
+`includeUsage` asks for token counts in the final chunk; turn it off for
+servers that reject `stream_options`. Reasoning models may reject a
+`temperature`. In the browser, Ollama needs `OLLAMA_ORIGINS` and LM Studio
+needs CORS enabled. Image input: PNG, JPEG, GIF and WebP. Tools work on
+the GPT-5 family and on compatible servers that implement Chat
+Completions tool calls; GPT-6 Astra requires the Responses API for tools,
+which this provider does not speak.
+
+## Claude
+
+```dart
+AnthropicProvider(
+  apiKey: const String.fromEnvironment('ANTHROPIC_API_KEY'),
+  model: 'claude-opus-5',
+)
+```
+
+`claude-sonnet-5` is the cheaper model. Requests carry the header
+Anthropic requires for direct browser calls, so a web build works, and
+the key travels to the browser with it: keep that to demos. The API needs
+a reply length limit; `maxTokens` defaults to 64000 unless the agent sets
+`maxOutputTokens`. Setting `temperature` on Opus 5 or Sonnet 5 is
+rejected by the API and shows up as an error card. Image input: JPEG,
+PNG, GIF and WebP. Opus 5 and Sonnet 5 think by default; within a turn
+the provider replays the assistant's content verbatim on the tool-result
+continuation, thinking blocks included, as the API requires.
+
+## Errors
+
+A failed turn keeps whatever text arrived and closes with an error card.
+`ChatState.error` carries a `ChatError` with a stable `code`
+(`provider_auth_failed`, `provider_rate_limited`, `validation_failed`,
+`provider_error`, `segment_timeout`, `network`, `tool_rounds_exceeded`), who is responsible, the
+provider's own message when there is one, and whether a retry makes
+sense. The card's wording comes from `FlowStrings`.
+
+## Writing a provider
+
+Implement `StacFlowProvider`: `run(TurnRequest)` gets the conversation
+as `WireMessage`s plus the `AgentConfig`, the `tools` to declare and the
+`segment` index, and must emit the `SseEvent` union: `start` first,
+`delta` per text chunk, `usage` when known, then exactly one `done`, with
+`seq` counting from 0. A tool call is `tool_call` in three phases, start,
+zero or more deltas and end, and a segment that made calls ends with
+`done{awaiting_client_tools}`; the loop then runs the handlers and calls
+`run` again with the next segment, whose history carries the calls as
+`WireToolCallPart`s on the assistant message and the results as
+`WireToolResultPart`s on a user message. An `error` event followed by
+`done{error}` reports a failure; a stream error with no `done` means the
+connection failed.

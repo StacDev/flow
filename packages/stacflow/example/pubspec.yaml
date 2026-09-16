@@ -1,0 +1,23 @@
+name: stacflow_example
+description: The stacflow chat screen against Gemini with your own key.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.44.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  material_ui: ^1.0.0
+  stacflow: ^0.0.1
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

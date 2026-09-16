@@ -6,7 +6,6 @@ on:
   pull_request:
   workflow_dispatch:
 
-# A new push to the same ref supersedes the run already in flight.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -15,8 +14,8 @@ permissions:
   contents: read
 
 jobs:
-  package:
-    name: Package
+  workspace:
+    name: Workspace
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -31,46 +30,20 @@ jobs:
       - name: Format
         run: dart format --output=none --set-exit-if-changed .
 
-      # Scoped to lib/: from the repo root the analyzer also walks into
-      # example/ and playground/, which resolve their own dependencies and
-      # are analysed in the `apps` job instead.
       - name: Analyze
-        run: flutter analyze lib
+        run: dart run melos run analyze
 
-      # test/ is deliberately empty while the component surface is still being
-      # reshaped design-first; this runs the day the first test lands.
       - name: Test
-        run: |
-          if find test -name '*_test.dart' 2>/dev/null | grep -q .; then
-            flutter test
-          else
-            echo "No tests yet — skipping."
-          fi
+        run: dart run melos run test
 
-      # Catches packaging mistakes (a stale .pubignore, a missing asset, a
-      # broken README link) before a release tag, not after.
-      - name: Publish dry run
-        run: flutter pub publish --dry-run
-
-  apps:
-    name: ${{ matrix.app }}
+  package:
+    name: flow_ui package
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [example, playground]
+    defaults:
+      run:
+        working-directory: packages/flow_ui
     steps:
       - uses: actions/checkout@v7
-
-      # The example reads its Gemini key from lib/env.g.dart, which is
-      # gitignored so a real key can never land in a commit — meaning a
-      # fresh checkout doesn't have it. Stub it with an empty key, the
-      # same state a fresh clone runs with (see example/README.md).
-      - name: Stub the example's key file
-        if: matrix.app == 'example'
-        run: |
-          printf '// CI stub — the real file is gitignored.\nconst String apiKey = %s;\n' "''" \
-            > example/lib/env.g.dart
 
       - uses: subosito/flutter-action@v2
         with:
@@ -78,10 +51,41 @@ jobs:
           cache: true
 
       - run: flutter pub get
-        working-directory: ${{ matrix.app }}
 
       - run: flutter analyze
-        working-directory: ${{ matrix.app }}
+
+      - name: Publish dry run
+        run: flutter pub publish --dry-run
+
+  apps:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: example
+            dir: packages/flow_ui/example
+          - name: stacflow example
+            dir: packages/stacflow/example
+          - name: playground
+            dir: playground
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+        working-directory: ${{ matrix.dir }}
+
+      - run: flutter analyze
+        working-directory: ${{ matrix.dir }}
+
+      - run: flutter build web --release
+        working-directory: ${{ matrix.dir }}
 
   docs:
     name: Docs site
@@ -89,8 +93,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # `build:site` compiles the playground to wasm before Astro builds, so
-      # this job needs both toolchains.
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -105,7 +107,46 @@ jobs:
       - run: npm ci
         working-directory: docs
 
-      # The same build the deploy runs: playground → public/playground, then
-      # the site. Keeps a broken playground from reaching flowui.stac.dev.
       - run: npm run build:site
         working-directory: docs
+
+  # Dependency-direction rules the analyzer cannot express. Greps anchor to
+  # import/export directives so prose in doc comments never trips them.
+  boundaries:
+    name: Boundaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: flow_ui never depends on the SDK package
+        run: |
+          ! grep -rnE "^\s*(import|export)\s+'package:stacflow/" packages/flow_ui/lib \
+            || { echo "::error::flow_ui is the presentation layer; the SDK depends on it, never the reverse"; exit 1; }
+          ! grep -nE "^\s*stacflow:" packages/flow_ui/pubspec.yaml \
+            || { echo "::error::flow_ui must not depend on the SDK package"; exit 1; }
+
+  contracts:
+    name: Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Lock matches contracts/
+        run: |
+          test "$(./tool/contracts_hash.sh)" = "$(cat contracts.lock)" \
+            || { echo "::error::contracts/ changed without updating contracts.lock: run ./tool/contracts_hash.sh > contracts.lock"; exit 1; }
+
+      - name: Generated Dart matches contracts/
+        run: |
+          dart run tool/contracts_gen.dart
+          dart format packages/stacflow/lib/src/generated >/dev/null
+          git add -N packages/stacflow/lib/src/generated
+          git diff --exit-code -- packages/stacflow/lib/src/generated \
+            || { echo "::error::generated types are stale: run dart run tool/contracts_gen.dart && dart format packages/stacflow/lib/src/generated"; exit 1; }

@@ -12,7 +12,7 @@ npm run build    # static site in dist/
 Google Sans loads from Google Fonts via the `<link>` in `astro.config.mjs` —
 the same source the package fetches from at runtime. Brand colors in
 `src/styles/theme.css` mirror the package's design tokens in
-`lib/src/theme/flow_colors.dart`.
+`packages/flow_ui/lib/src/theme/flow_colors.dart`.
 
 `npm run playground` builds the repo's `playground/` Flutter app for the
 web into `public/playground/` — served at `/playground/<component>` (path

@@ -12,7 +12,13 @@
         },
         {
             "name": "example",
-            "cwd": "example",
+            "cwd": "packages/flow_ui/example",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "stacflow example",
+            "cwd": "packages/stacflow/example",
             "request": "launch",
             "type": "dart"
         }

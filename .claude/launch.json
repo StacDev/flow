@@ -15,6 +15,15 @@
         "cd playground && flutter run -d web-server --web-port=8123"
       ],
       "port": 8123
+    },
+    {
+      "name": "stacflow-example",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd packages/stacflow/example && flutter run -d web-server --web-port=8124 $([ -f env.json ] && echo --dart-define-from-file=env.json)"
+      ],
+      "port": 8124
     }
   ]
 }

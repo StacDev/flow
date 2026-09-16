@@ -18,11 +18,11 @@
 
 ## Checklist
 
-- [ ] `flutter analyze lib` and `flutter analyze` in `example/` and `playground/` are clean
-- [ ] `dart format .` applied
+- [ ] `dart run melos run analyze` is clean
+- [ ] `dart run melos run format` applied
 - [ ] Exercised in the playground — with a stage demo added or updated if this is a new component or variant
-- [ ] Any new entry under `dependencies:` in `pubspec.yaml` is flutter.dev-published, forces no configuration on hosts that never use the feature, and is argued in this PR
+- [ ] Any new entry under `dependencies:` in `packages/flow_ui/pubspec.yaml` is flutter.dev-published, forces no configuration on hosts that never use the feature, and is argued in this PR
 - [ ] Nothing model-facing — no prompts, schemas, or provider/network calls
-- [ ] New public API is exported from `lib/flow_ui.dart` and documented in `docs/` and the README table
-- [ ] `CHANGELOG.md` updated for user-facing changes, with breaking changes called out
+- [ ] New public API is exported from `packages/flow_ui/lib/flow_ui.dart` and documented in `docs/` and the README table
+- [ ] `packages/flow_ui/CHANGELOG.md` updated for user-facing changes, with breaking changes called out
 - [ ] PR title follows conventional commits (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`)

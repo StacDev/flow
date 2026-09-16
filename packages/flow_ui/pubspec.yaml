@@ -1,0 +1,42 @@
+name: flow_ui
+description: Flow UI is an open-source Flutter UI library to build production-grade Chat & AI assistant interfaces.
+version: 0.4.0
+homepage: https://flowui.stac.dev/
+repository: https://github.com/StacDev/flow_ui/tree/main/packages/flow_ui
+issue_tracker: https://github.com/StacDev/flow_ui/issues
+documentation: https://flowui.stac.dev/
+topics:
+  - ai
+  - chat
+  - chatbot
+  - assistant
+  - ui
+
+environment:
+  sdk: ^3.12.2
+  flutter: ">=3.44.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Google Sans and Google Sans Code, fetched from Google Fonts at runtime —
+  # the one dependency outside flutter.dev's packages; no font files ship.
+  google_fonts: ^8.2.1
+  material_ui: ^1.0.0
+  # The composer's built-in attach button opens this. flutter.dev-published
+  # and endorsed on all six platforms, and — unlike image_picker — it adds
+  # no permission, no FileProvider and no Play-services entry to a host's
+  # Android manifest, and no Info.plist strings to a host's iOS build. The
+  # one thing a host must do is a macOS entitlement
+  # (com.apple.security.files.user-selected.read-only); without it the
+  # dialog opens onto nothing. Hosts that never wire an attach callback
+  # ship this and configure nothing.
+  file_selector: ^1.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+

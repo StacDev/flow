@@ -14,13 +14,19 @@ Its components draw the conversation state you hand them and report what
 the user did through callbacks; everything model-shaped stays in your
 app.
 
+<Aside type="tip" title="Want a working chat in one import?">
+	[stacflow](/stacflow/getting-started/) wires these components to Gemini,
+	OpenAI and Claude with your own API key: a streaming chat screen in about
+	fifteen lines.
+</Aside>
+
 ## Install
 
 One line in your pubspec:
 
 ```yaml title="pubspec.yaml"
 dependencies:
-  flow_ui: ^0.3.0
+  flow_ui: ^0.4.0
 ```
 
 That brings in the Flutter SDK, `material_ui`, `file_selector` — the
@@ -94,9 +100,10 @@ snippets included. It is also in the repo to run locally:
 cd playground && flutter run -d chrome
 ```
 
-For a minimal starting point, the repo's `example/` is the full chat screen
-from the README as a single-file app: generate platform runners once with
-`flutter create . --platforms=web`, then `flutter run -d chrome`.
+For a minimal starting point, the repo's `packages/flow_ui/example/` is the
+full chat screen from the README as a single-file app, platform runners
+checked in: `cd packages/flow_ui/example`, then
+`flutter run -d chrome --dart-define=GEMINI_API_KEY=...`.
 
 ## Next
 
