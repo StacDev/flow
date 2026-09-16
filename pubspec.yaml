@@ -21,20 +21,16 @@ melos:
   scripts:
     analyze:
       description: dart analyze --fatal-infos in every member, with the nearest analysis_options.yaml
-      exec: dart analyze --fatal-infos .
+      run: dart run melos exec -- dart analyze --fatal-infos .
     format:
       description: Format every member in place
-      exec: dart format .
+      run: dart run melos exec -- dart format .
     format:check:
       description: Fails on unformatted files
       run: dart format --output=none --set-exit-if-changed .
     test:
       description: Tests in every member that has a test/ directory
-      exec: flutter test
-      packageFilters:
-        dirExists: test
+      run: dart run melos exec --dir-exists=test -- flutter test
     publish:dry-run:
       description: Packaging smoke for every publishable member
-      exec: flutter pub publish --dry-run
-      packageFilters:
-        noPrivate: true
+      run: dart run melos exec --no-private -- flutter pub publish --dry-run
