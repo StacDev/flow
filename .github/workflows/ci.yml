@@ -27,6 +27,9 @@ jobs:
 
       - run: flutter pub get
 
+      - name: Example key file
+        run: cp packages/stacflow/example/lib/env.example.dart packages/stacflow/example/lib/env.dart
+
       - name: Format
         run: dart format --output=none --set-exit-if-changed .
 
@@ -77,6 +80,11 @@ jobs:
         with:
           channel: stable
           cache: true
+
+      - name: Example key file
+        if: matrix.dir == 'packages/stacflow/example'
+        run: cp lib/env.example.dart lib/env.dart
+        working-directory: ${{ matrix.dir }}
 
       - run: flutter pub get
         working-directory: ${{ matrix.dir }}

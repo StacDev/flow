@@ -47,5 +47,5 @@ app.*.map.json
 # Widget Preview related
 .widget_preview/
 
-# API keys for --dart-define-from-file. Never committed.
-env.json
+# The API key, copied from lib/env.example.dart. Never committed.
+lib/env.dart

@@ -21,7 +21,7 @@
       "runtimeExecutable": "sh",
       "runtimeArgs": [
         "-c",
-        "cd packages/stacflow/example && flutter run -d web-server --web-port=8124 $([ -f env.json ] && echo --dart-define-from-file=env.json)"
+        "cd packages/stacflow/example && flutter run -d web-server --web-port=8124"
       ],
       "port": 8124
     }

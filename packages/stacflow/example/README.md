@@ -9,23 +9,17 @@ indicator, stop, retry from the error card, regenerate, edit a turn,
 images from the picker, a drop or a paste, copy and feedback all come
 from the view; nothing here is wired by hand.
 
-Grab a key from [Google AI Studio](https://aistudio.google.com/apikey) and
-pass it at launch. Platform runners are checked in, so it runs directly:
+Grab a key from [Google AI Studio](https://aistudio.google.com/apikey), copy
+`lib/env.example.dart` to `lib/env.dart` and paste it in. `lib/env.dart` is
+gitignored, so the key never reaches the repository. Platform runners are
+checked in, so it then runs directly:
 
 ```bash
-flutter run --dart-define=GEMINI_API_KEY=AIza...
+cp lib/env.example.dart lib/env.dart
+flutter run
 ```
 
-Or keep the key in a gitignored `env.json` next to this README and pass the
-file instead:
-
-```json
-{ "GEMINI_API_KEY": "AIza..." }
-```
-
-```bash
-flutter run --dart-define-from-file=env.json
-```
+A `--dart-define=GEMINI_API_KEY=AIza...` at launch overrides the file.
 
 With an empty key the app still runs; sending answers with the error card.
 On the web the key travels to the browser: fine for this demo, not for a

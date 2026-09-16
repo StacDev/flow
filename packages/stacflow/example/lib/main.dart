@@ -36,7 +36,10 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final StacFlowChat _chat = StacFlowChat(
     provider: GeminiProvider(
-      apiKey: geminiApiKey,
+      apiKey: const String.fromEnvironment(
+        'GEMINI_API_KEY',
+        defaultValue: geminiApiKey,
+      ),
       models: const [
         ModelOption(id: 'gemini-3.6-flash', label: 'Gemini 3.6 Flash'),
         ModelOption(
