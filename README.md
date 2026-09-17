@@ -21,7 +21,7 @@ This repository is a Dart pub workspace.
 | Package | What it is | Status |
 |---|---|---|
 | [`packages/flow_ui`](packages/flow_ui) | The chat and assistant UI component library | [![pub package](https://img.shields.io/pub/v/flow_ui.svg)](https://pub.dev/packages/flow_ui) |
-| [`packages/stacflow`](packages/stacflow) | Streaming AI chat on flow_ui with Gemini, OpenAI and Claude using your own key: `StacFlowChat` and `StacFlowChatView` | Pre-release, not published |
+| [`packages/stacflow`](packages/stacflow) | Streaming AI chat on flow_ui with Gemini, OpenAI and Claude using your own key: `StacFlowChat` and `StacFlowChatView` | 0.1.0, publishes after flow_ui 0.4.0 |
 
 Also here: [`playground/`](playground), every component on a stage, hosted at [flowui.stac.dev/playground](https://flowui.stac.dev/playground); [`docs/`](docs), the site; [`contracts/`](contracts), the SDK wire contract, with its codegen in [`tool/`](tool).
 
