@@ -13,7 +13,7 @@ import 'package:stacflow/src/transport/turn_ids.dart';
 import 'package:stacflow/src/transport/turn_request.dart';
 
 final class ProviderFailure {
-  const new({
+  const ProviderFailure({
     required this.code,
     required this.message,
     this.retryable,
@@ -38,7 +38,7 @@ abstract base class ProviderTurn {
 }
 
 final class TurnEmitter {
-  new({
+  TurnEmitter({
     required this.ids,
     required this.segment,
     required this.model,
@@ -234,7 +234,7 @@ final class TurnEmitter {
 }
 
 final class _OpenCall {
-  new(this.id, this.name);
+  _OpenCall(this.id, this.name);
 
   final String id;
   final String name;

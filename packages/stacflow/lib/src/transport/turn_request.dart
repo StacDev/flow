@@ -7,7 +7,7 @@ import 'package:stacflow/src/transport/turn_ids.dart';
 /// One turn's input: the conversation as providers see it, the agent
 /// settings, the tools, the ids and the future that cancels it.
 final class TurnRequest {
-  const new({
+  const TurnRequest({
     required this.history,
     required this.agent,
     required this.ids,
@@ -35,19 +35,19 @@ enum WireRole { user, assistant }
 
 /// A piece of a wire message.
 sealed class WirePart {
-  const new();
+  const WirePart();
 }
 
 /// Plain text.
 final class WireTextPart extends WirePart {
-  const new(this.text);
+  const WireTextPart(this.text);
 
   final String text;
 }
 
 /// An inline image.
 final class WireImagePart extends WirePart {
-  const new({required this.bytes, required this.mimeType});
+  const WireImagePart({required this.bytes, required this.mimeType});
 
   final Uint8List bytes;
   final String mimeType;
@@ -55,10 +55,14 @@ final class WireImagePart extends WirePart {
 
 /// A tool call the model made; only on assistant messages.
 final class WireToolCallPart extends WirePart {
-  const new({required this.id, required this.name, required this.args});
+  const WireToolCallPart({
+    required this.id,
+    required this.name,
+    required this.args,
+  });
 
   /// The call as [record] holds it.
-  factory of(ToolCallRecord record) =>
+  factory WireToolCallPart.of(ToolCallRecord record) =>
       WireToolCallPart(id: record.id, name: record.name, args: record.args);
 
   final String id;
@@ -71,7 +75,7 @@ enum WireToolResultStatus { ok, error, declined }
 
 /// A tool's answer; only on user messages, ahead of any other part.
 final class WireToolResultPart extends WirePart {
-  const new({
+  const WireToolResultPart({
     required this.id,
     required this.name,
     required this.status,
@@ -81,7 +85,7 @@ final class WireToolResultPart extends WirePart {
 
   /// The outcome [record] holds; a call that never ran reports it was
   /// cancelled.
-  factory of(ToolCallRecord record) => WireToolResultPart(
+  factory WireToolResultPart.of(ToolCallRecord record) => WireToolResultPart(
     id: record.id,
     name: record.name,
     status: switch (record.status) {
@@ -108,7 +112,7 @@ final class WireToolResultPart extends WirePart {
 
 /// One message as providers see it.
 final class WireMessage {
-  const new({required this.role, required this.parts});
+  const WireMessage({required this.role, required this.parts});
 
   final WireRole role;
   final List<WirePart> parts;

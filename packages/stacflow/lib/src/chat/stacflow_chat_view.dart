@@ -18,7 +18,7 @@ typedef ToolBodyBuilder = Widget? Function(
 /// attachments, message actions, tool cards and model selector. Body-only;
 /// put it in a Scaffold under material_ui's MaterialApp.
 class StacFlowChatView extends StatefulWidget {
-  const new({
+  const StacFlowChatView({
     required this.chat,
     super.key,
     this.greeting,

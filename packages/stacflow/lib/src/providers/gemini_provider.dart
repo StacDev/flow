@@ -12,7 +12,7 @@ import 'package:stacflow/src/transport/turn_request.dart';
 
 /// Google's Gemini API, called directly with an API key from AI Studio.
 final class GeminiProvider implements StacFlowProvider {
-  new({
+  GeminiProvider({
     required this._apiKey,
     this.model = defaultModel,
     this.baseUrl = 'https://generativelanguage.googleapis.com',
@@ -84,7 +84,7 @@ final class GeminiProvider implements StacFlowProvider {
 }
 
 final class _GeminiTurn extends ProviderTurn {
-  new(this.provider, this.request, this._apiKey);
+  _GeminiTurn(this.provider, this.request, this._apiKey);
 
   final GeminiProvider provider;
   final TurnRequest request;

@@ -3,7 +3,7 @@ import 'package:flow_ui/flow_ui.dart';
 /// Every string the SDK shows, with English defaults. Subclass and override
 /// to localise.
 class FlowStrings {
-  const new();
+  const FlowStrings();
 
   String get thinking => 'Thinking...';
   String get placeholder => 'How can I help you today?';

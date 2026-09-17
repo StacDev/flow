@@ -7,7 +7,7 @@ enum ToolPermission { read, write, destructive }
 /// An action the app lets the model take: the model reads [description]
 /// and [parameters], the SDK runs [run] with the arguments it chose.
 final class Tool {
-  const new({
+  const Tool({
     required this.name,
     required this.description,
     required this.run,
@@ -74,7 +74,7 @@ final class Tool {
 
 /// One call of a tool, as its handler receives it.
 final class ToolCall {
-  new({
+  ToolCall({
     required this.id,
     required this.name,
     required this.args,
@@ -99,7 +99,7 @@ final class ToolCall {
 /// A failure a tool reports in its own words; the message reaches the
 /// card and the model.
 class ToolException implements Exception {
-  const new(this.message);
+  const ToolException(this.message);
 
   final String message;
 
@@ -123,7 +123,7 @@ abstract final class ToolErrorCodes {
 
 /// Why a tool call did not return a result.
 final class ToolCallError {
-  const new({required this.code, required this.message});
+  const ToolCallError({required this.code, required this.message});
 
   static const ToolCallError cancelled = ToolCallError(
     code: ToolErrorCodes.cancelled,
@@ -138,7 +138,7 @@ final class ToolCallError {
 
 /// One tool call the thread made: its arguments, status and outcome.
 final class ToolCallRecord {
-  const new({
+  const ToolCallRecord({
     required this.id,
     required this.name,
     required this.segment,

@@ -18,7 +18,7 @@ import 'package:stacflow/src/transport/turn_request.dart';
 /// A chat against one provider: it holds the thread, runs each turn with
 /// the app's tools, and exposes everything as one [ChatState] per change.
 final class StacFlowChat {
-  new({
+  StacFlowChat({
     required StacFlowProvider provider,
     this.agent = const AgentConfig(),
     this.tools = const [],
@@ -642,7 +642,7 @@ String _pretty(Object? value) =>
     const JsonEncoder.withIndent('  ').convert(value);
 
 final class _Turn {
-  new({required this.ids});
+  _Turn({required this.ids});
 
   final TurnIds ids;
   final Completer<void> abort = Completer<void>();
@@ -699,7 +699,7 @@ final class _TextBlock extends _Block {
 }
 
 final class _ToolBlock extends _Block {
-  new(this.id);
+  _ToolBlock(this.id);
 
   final String id;
   final StringBuffer argsBuffer = StringBuffer();

@@ -14,7 +14,7 @@ import 'package:stacflow/src/transport/turn_request.dart';
 /// calls send the header Anthropic requires for that, so the key travels
 /// to the browser; keep that for development builds.
 final class AnthropicProvider implements StacFlowProvider {
-  new({
+  AnthropicProvider({
     required this._apiKey,
     this.model = defaultModel,
     this.baseUrl = 'https://api.anthropic.com',
@@ -92,7 +92,7 @@ final class AnthropicProvider implements StacFlowProvider {
 }
 
 final class _AnthropicTurn extends ProviderTurn {
-  new(this.provider, this.request, this._apiKey);
+  _AnthropicTurn(this.provider, this.request, this._apiKey);
 
   final AnthropicProvider provider;
   final TurnRequest request;

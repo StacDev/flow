@@ -14,7 +14,7 @@ import 'package:stacflow/src/transport/turn_request.dart';
 /// [baseUrl] at any compatible server: Ollama, Groq, OpenRouter, LM Studio,
 /// vLLM, or a proxy of your own that holds the key.
 final class OpenAIProvider implements StacFlowProvider {
-  new({
+  OpenAIProvider({
     required this._apiKey,
     this.model = defaultModel,
     this.baseUrl = 'https://api.openai.com/v1',
@@ -88,7 +88,7 @@ final class OpenAIProvider implements StacFlowProvider {
 }
 
 final class _OpenAITurn extends ProviderTurn {
-  new(this.provider, this.request, this._apiKey);
+  _OpenAITurn(this.provider, this.request, this._apiKey);
 
   final OpenAIProvider provider;
   final TurnRequest request;

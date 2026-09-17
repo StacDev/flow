@@ -6,7 +6,7 @@ import 'package:stacflow/src/tools/tool.dart';
 /// Tokens a turn consumed, as the provider reported them.
 @immutable
 final class ChatUsage {
-  const new({
+  const ChatUsage({
     required this.model,
     required this.inputTokens,
     required this.outputTokens,
@@ -20,7 +20,7 @@ final class ChatUsage {
 /// How the last turn went: time to the first token, total time, tokens.
 @immutable
 final class ChatTurnStats {
-  const new({required this.total, this.firstToken, this.usage});
+  const ChatTurnStats({required this.total, this.firstToken, this.usage});
 
   final Duration total;
   final Duration? firstToken;
@@ -30,7 +30,7 @@ final class ChatTurnStats {
 /// Everything a chat shows, as one immutable value per change.
 @immutable
 final class ChatState {
-  new({
+  ChatState({
     required this.model,
     required this.threadId,
     List<FlowMessageData> messages = const [],

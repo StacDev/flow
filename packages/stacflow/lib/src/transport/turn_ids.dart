@@ -4,7 +4,7 @@ import 'dart:math';
 /// Mints the `thr_`, `trn_`, `msg_` and `tc_` ids a chat uses. Inject one
 /// with a seeded [Random] for reproducible ids.
 class IdGenerator {
-  new({Random? random}) : _random = random ?? Random.secure();
+  IdGenerator({Random? random}) : _random = random ?? Random.secure();
 
   static const String _alphabet =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -62,14 +62,14 @@ final RegExp _hexPattern = RegExp(r'^[0-9a-f]+$');
 
 /// The identity of one turn on the wire.
 final class TurnIds {
-  const new({
+  const TurnIds({
     required this.turnId,
     required this.messageId,
     required this.threadId,
   });
 
   /// Fresh turn and message ids under [threadId].
-  factory generate({required String threadId, IdGenerator? ids}) {
+  factory TurnIds.generate({required String threadId, IdGenerator? ids}) {
     final generator = ids ?? IdGenerator();
     return TurnIds(
       turnId: generator.turn(),

@@ -13,3 +13,7 @@ analyzer:
     - docs/**
   errors:
     public_member_api_docs: ignore
+
+linter:
+  rules:
+    unnecessary_type_name_in_constructor: false

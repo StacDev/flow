@@ -30,7 +30,7 @@ Stream<SseEvent> runToolLoop({
 ).stream;
 
 final class _ToolLoop {
-  new({
+  _ToolLoop({
     required this.transport,
     required this.request,
     required this.approve,
@@ -359,7 +359,7 @@ Object? _normalize(Object? value) =>
     jsonDecode(jsonEncode(value, toEncodable: (object) => object.toString()));
 
 final class _Segment {
-  new({required this.index, required this.history});
+  _Segment({required this.index, required this.history});
 
   final int index;
   final List<WireMessage> history;
@@ -377,5 +377,5 @@ final class _Segment {
 }
 
 final class _Aborted implements Exception {
-  const new();
+  const _Aborted();
 }

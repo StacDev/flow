@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 final class SseFrame {
-  const new({required this.data, this.event, this.id, this.retry});
+  const SseFrame({required this.data, this.event, this.id, this.retry});
 
   final String data;
   final String? event;
@@ -14,7 +14,7 @@ final class SseFrame {
 }
 
 final class SseDecoder extends StreamTransformerBase<List<int>, SseFrame> {
-  const new();
+  const SseDecoder();
 
   @override
   Stream<SseFrame> bind(Stream<List<int>> stream) => stream
@@ -24,7 +24,7 @@ final class SseDecoder extends StreamTransformerBase<List<int>, SseFrame> {
 }
 
 final class SseLineParser extends StreamTransformerBase<String, SseFrame> {
-  const new();
+  const SseLineParser();
 
   @override
   Stream<SseFrame> bind(Stream<String> stream) {

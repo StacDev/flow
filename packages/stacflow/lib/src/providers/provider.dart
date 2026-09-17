@@ -4,7 +4,11 @@ import 'package:stacflow/src/transport/turn_transport.dart';
 /// instructions and the sampling knobs. Unset fields are left out of the
 /// request.
 final class AgentConfig {
-  const new({this.instructions, this.temperature, this.maxOutputTokens});
+  const AgentConfig({
+    this.instructions,
+    this.temperature,
+    this.maxOutputTokens,
+  });
 
   final String? instructions;
   final double? temperature;
@@ -13,7 +17,7 @@ final class AgentConfig {
 
 /// A model a provider can be pointed at, as a selector shows it.
 final class ModelOption {
-  const new({required this.id, required this.label, this.description});
+  const ModelOption({required this.id, required this.label, this.description});
 
   final String id;
   final String label;
@@ -39,7 +43,7 @@ abstract interface class StacFlowProvider implements TurnTransport {
 /// The network failed before a response arrived, or the connection closed
 /// mid-stream. Worth retrying; never carries headers or URLs.
 final class ProviderTransportException implements Exception {
-  const new(this.message, {this.cause});
+  const ProviderTransportException(this.message, {this.cause});
 
   final String message;
   final Object? cause;
