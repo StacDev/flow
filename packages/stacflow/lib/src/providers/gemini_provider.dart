@@ -47,7 +47,20 @@ final class GeminiProvider implements StacFlowProvider {
 
   final String _apiKey;
   final http.Client? _client;
-  final Map<String, List<Map<String, dynamic>>> _replay = {};
+  final Map<String, Map<String, List<Map<String, dynamic>>>> _replay = {};
+
+  static const int _maxCachedThreads = 8;
+
+  Map<String, List<Map<String, dynamic>>> _replayFor(TurnRequest request) {
+    final thread = request.ids.threadId;
+    if (request.segment == 0) _replay.remove(thread);
+    final cached = _replay[thread];
+    if (cached != null) return cached;
+    while (_replay.length >= _maxCachedThreads) {
+      _replay.remove(_replay.keys.first);
+    }
+    return _replay[thread] = {};
+  }
 
   @override
   String get id => 'gemini';
@@ -65,30 +78,28 @@ final class GeminiProvider implements StacFlowProvider {
   );
 
   @override
-  Stream<SseEvent> run(TurnRequest request) {
-    if (request.segment == 0) _replay.clear();
-    return runTurn(
-      turn: _GeminiTurn(this, request, _apiKey),
-      request: request,
-      providerId: id,
-      model: model,
-      apiKey: _apiKey,
-      client: _client,
-      firstByteTimeout: firstByteTimeout,
-      idleTimeout: idleTimeout,
-    );
-  }
+  Stream<SseEvent> run(TurnRequest request) => runTurn(
+    turn: _GeminiTurn(this, request, _apiKey, _replayFor(request)),
+    request: request,
+    providerId: id,
+    model: model,
+    apiKey: _apiKey,
+    client: _client,
+    firstByteTimeout: firstByteTimeout,
+    idleTimeout: idleTimeout,
+  );
 
   @override
   String toString() => 'GeminiProvider(model: $model)';
 }
 
 final class _GeminiTurn extends ProviderTurn {
-  _GeminiTurn(this.provider, this.request, this._apiKey);
+  _GeminiTurn(this.provider, this.request, this._apiKey, this._replay);
 
   final GeminiProvider provider;
   final TurnRequest request;
   final String _apiKey;
+  final Map<String, List<Map<String, dynamic>>> _replay;
 
   static const Set<String> _imageTypes = {
     'image/png',
@@ -174,7 +185,10 @@ final class _GeminiTurn extends ProviderTurn {
           },
         ],
       'contents': [
-        for (final message in withToolResults(request.history))
+        for (final message in withSupportedImages(
+          withToolResults(request.history),
+          imageTypes: _imageTypes,
+        ))
           _content(message),
       ],
       if (generationConfig.isNotEmpty) 'generationConfig': generationConfig,
@@ -186,7 +200,7 @@ final class _GeminiTurn extends ProviderTurn {
     final isUser = message.role == WireRole.user;
     if (!isUser) {
       final calls = message.parts.whereType<WireToolCallPart>();
-      final cached = calls.isEmpty ? null : provider._replay[calls.first.id];
+      final cached = calls.isEmpty ? null : _replay[calls.first.id];
       if (cached != null) return {'role': 'model', 'parts': cached};
     }
     final results = <Map<String, Object?>>[];
@@ -326,7 +340,7 @@ final class _GeminiTurn extends ProviderTurn {
   void onEnd(TurnEmitter out) {
     if (_sawFrame) {
       if (_callIds.isNotEmpty) {
-        provider._replay[_callIds.first] = List.of(_parts);
+        _replay[_callIds.first] = List.of(_parts);
       }
       out.complete();
     } else {

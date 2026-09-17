@@ -469,6 +469,25 @@ String resultText(WireToolResultPart part) {
   }
 }
 
+List<WireMessage> withSupportedImages(
+  List<WireMessage> history, {
+  required Set<String> imageTypes,
+}) => [
+  for (final message in history)
+    WireMessage(
+      role: message.role,
+      parts: [
+        for (final part in message.parts)
+          if (part is WireImagePart &&
+              (message.role != WireRole.user ||
+                  !imageTypes.contains(part.mimeType)))
+            WireTextPart(unsentAttachmentText(null, part.mimeType))
+          else
+            part,
+      ],
+    ),
+];
+
 List<WireMessage> withToolResults(List<WireMessage> history) {
   final out = <WireMessage>[];
   var index = 0;

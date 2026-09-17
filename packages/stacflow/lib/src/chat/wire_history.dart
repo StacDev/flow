@@ -113,11 +113,18 @@ List<WirePart> _wirePartsOf(List<FlowMessagePart> parts) {
       case FlowAttachmentPart(:final attachments):
         for (final attachment in attachments) {
           final image = _imageOf(attachment.bytes, attachment.mimeType);
-          if (image != null) out.add(image);
+          out.add(
+            image ??
+                WireTextPart(
+                  unsentAttachmentText(attachment.label, attachment.mimeType),
+                ),
+          );
         }
-      case FlowImagePart(:final bytes, :final mimeType):
+      case FlowImagePart(:final bytes, :final mimeType, :final semanticLabel):
         final image = _imageOf(bytes, mimeType);
-        if (image != null) out.add(image);
+        out.add(
+          image ?? WireTextPart(unsentAttachmentText(semanticLabel, mimeType)),
+        );
       case FlowCodePart(:final code, :final language):
         out.add(WireTextPart('```${language ?? ''}\n$code\n```'));
       case FlowTextPart():

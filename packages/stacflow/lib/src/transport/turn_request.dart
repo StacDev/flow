@@ -53,6 +53,14 @@ final class WireImagePart extends WirePart {
   final String mimeType;
 }
 
+/// The text that stands in for an attachment a provider call cannot carry,
+/// so the turn still reaches the model with the file named.
+String unsentAttachmentText(String? label, String? mimeType) {
+  final name = label ?? 'file';
+  final type = mimeType == null ? '' : ' ($mimeType)';
+  return '[Attachment $name$type could not be sent to the model.]';
+}
+
 /// A tool call the model made; only on assistant messages.
 final class WireToolCallPart extends WirePart {
   const WireToolCallPart({

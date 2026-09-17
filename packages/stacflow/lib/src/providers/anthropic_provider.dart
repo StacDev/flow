@@ -54,7 +54,20 @@ final class AnthropicProvider implements StacFlowProvider {
 
   final String _apiKey;
   final http.Client? _client;
-  final Map<String, List<Map<String, dynamic>>> _replay = {};
+  final Map<String, Map<String, List<Map<String, dynamic>>>> _replay = {};
+
+  static const int _maxCachedThreads = 8;
+
+  Map<String, List<Map<String, dynamic>>> _replayFor(TurnRequest request) {
+    final thread = request.ids.threadId;
+    if (request.segment == 0) _replay.remove(thread);
+    final cached = _replay[thread];
+    if (cached != null) return cached;
+    while (_replay.length >= _maxCachedThreads) {
+      _replay.remove(_replay.keys.first);
+    }
+    return _replay[thread] = {};
+  }
 
   @override
   String get id => 'anthropic';
@@ -73,30 +86,28 @@ final class AnthropicProvider implements StacFlowProvider {
   );
 
   @override
-  Stream<SseEvent> run(TurnRequest request) {
-    if (request.segment == 0) _replay.clear();
-    return runTurn(
-      turn: _AnthropicTurn(this, request, _apiKey),
-      request: request,
-      providerId: id,
-      model: model,
-      apiKey: _apiKey,
-      client: _client,
-      firstByteTimeout: firstByteTimeout,
-      idleTimeout: idleTimeout,
-    );
-  }
+  Stream<SseEvent> run(TurnRequest request) => runTurn(
+    turn: _AnthropicTurn(this, request, _apiKey, _replayFor(request)),
+    request: request,
+    providerId: id,
+    model: model,
+    apiKey: _apiKey,
+    client: _client,
+    firstByteTimeout: firstByteTimeout,
+    idleTimeout: idleTimeout,
+  );
 
   @override
   String toString() => 'AnthropicProvider(model: $model)';
 }
 
 final class _AnthropicTurn extends ProviderTurn {
-  _AnthropicTurn(this.provider, this.request, this._apiKey);
+  _AnthropicTurn(this.provider, this.request, this._apiKey, this._replay);
 
   final AnthropicProvider provider;
   final TurnRequest request;
   final String _apiKey;
+  final Map<String, List<Map<String, dynamic>>> _replay;
 
   static const Set<String> _imageTypes = {
     'image/jpeg',
@@ -151,7 +162,10 @@ final class _AnthropicTurn extends ProviderTurn {
             },
         ],
       'messages': [
-        for (final message in withToolResults(request.history))
+        for (final message in withSupportedImages(
+          withToolResults(request.history),
+          imageTypes: _imageTypes,
+        ))
           _message(message),
       ],
     };
@@ -162,7 +176,7 @@ final class _AnthropicTurn extends ProviderTurn {
     final isUser = message.role == WireRole.user;
     if (!isUser) {
       final calls = message.parts.whereType<WireToolCallPart>();
-      final cached = calls.isEmpty ? null : provider._replay[calls.first.id];
+      final cached = calls.isEmpty ? null : _replay[calls.first.id];
       if (cached != null) return {'role': 'assistant', 'content': cached};
     }
     final results = <Map<String, Object?>>[];
@@ -357,7 +371,7 @@ final class _AnthropicTurn extends ProviderTurn {
           block,
     ];
     final firstCall = (_callIds.keys.toList()..sort()).first;
-    provider._replay[_callIds[firstCall]!] = content;
+    _replay[_callIds[firstCall]!] = content;
   }
 
   @override

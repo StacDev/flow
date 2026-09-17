@@ -158,7 +158,10 @@ final class _OpenAITurn extends ProviderTurn {
         if (agent.instructions case final instructions?
             when instructions.isNotEmpty)
           {'role': 'system', 'content': instructions},
-        for (final message in withToolResults(request.history))
+        for (final message in withSupportedImages(
+          withToolResults(request.history),
+          imageTypes: _imageTypes,
+        ))
           ..._messages(message),
       ],
       if (agent.temperature != null) 'temperature': agent.temperature,

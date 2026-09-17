@@ -175,7 +175,8 @@ class _StacFlowChatViewState extends State<StacFlowChatView> {
         ],
       );
     }
-    if (message.role != FlowMessageRole.assistant ||
+    if (!widget.showActions ||
+        message.role != FlowMessageRole.assistant ||
         message.status != FlowMessageStatus.complete) {
       return null;
     }
