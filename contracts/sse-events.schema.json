@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stacflow.ai/contracts/sse-events.schema.json",
+  "title": "StacFlow SSE protocol v1",
+  "description": "The normalized event stream a transport produces for one model segment. Framing: Content-Type text/event-stream; the SSE `event:` field carries the event name; `data:` carries exactly one JSON object on one line; the SSE `id:` field carries the decimal `seq`. `seq` is 0-based and strictly monotonic per stream with no gaps. Stream-scoped identity is stated once in `start` and never repeated. Every stream ends with exactly one `done`; a socket close without `done` is a retryable transport failure, never a protocol state. The Dart provider adapters emit this event union directly. Evolution is additive-only; decoders must ignore unknown event names and unknown fields.",
+  "x-stacflow-protocol": {
+    "version": 1,
+    "events": {
+      "start": "#/$defs/StartEvent",
+      "delta": "#/$defs/DeltaEvent",
+      "tool_call": "#/$defs/ToolCallEvent",
+      "usage": "#/$defs/UsageEvent",
+      "error": "#/$defs/ErrorEvent",
+      "done": "#/$defs/DoneEvent"
+    },
+    "ordering": [
+      "Per tool call: phase start, then zero or more phase delta, then phase end.",
+      "Assistant text may interleave BETWEEN tool calls, never inside one call's phases.",
+      "Tool calls are serialized in v1: no overlapping starts.",
+      "`error` is non-terminal by itself and is always followed by `done`.",
+      "`done` is always last and occurs exactly once."
+    ]
+  },
+  "oneOf": [
+    { "$ref": "#/$defs/StartEvent" },
+    { "$ref": "#/$defs/DeltaEvent" },
+    { "$ref": "#/$defs/ToolCallEvent" },
+    { "$ref": "#/$defs/UsageEvent" },
+    { "$ref": "#/$defs/ErrorEvent" },
+    { "$ref": "#/$defs/DoneEvent" }
+  ],
+  "$defs": {
+    "Seq": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "0-based, strictly monotonic per stream, no gaps. Mirrored in the SSE id: field."
+    },
+    "TurnId": { "type": "string", "pattern": "^trn_[A-Za-z0-9]+$" },
+    "ThreadId": { "type": "string", "pattern": "^thr_[A-Za-z0-9]+$" },
+    "MessageId": { "type": "string", "pattern": "^msg_[A-Za-z0-9]+$" },
+    "ToolCallId": { "type": "string", "pattern": "^tc_[A-Za-z0-9]+$" },
+    "AgentVersionId": { "type": "string", "pattern": "^agv_[A-Za-z0-9]+$" },
+    "FailureClass": {
+      "type": "string",
+      "enum": ["provider", "developer_api", "gateway", "policy", "timeout", "cancelled"],
+      "description": "The wire-level attribution enum (D18), shared by SSE error events, tool_results entries, and analytics."
+    },
+    "Upstream": {
+      "type": "object",
+      "description": "Structured upstream attribution: which provider/backend actually failed, regardless of the observed HTTP status.",
+      "properties": {
+        "provider": { "type": "string" },
+        "status": { "type": "integer" },
+        "code": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "StartEvent": {
+      "type": "object",
+      "description": "First event of every stream (seq 0). Declares stream-scoped identity once. `segment` is the 0-based continuation index within the turn; `message_id` is the assistant message being built, stable across all segments of the turn.",
+      "properties": {
+        "seq": { "$ref": "#/$defs/Seq" },
+        "protocol": { "const": 1 },
+        "turn_id": { "$ref": "#/$defs/TurnId" },
+        "segment": { "type": "integer", "minimum": 0 },
+        "message_id": { "$ref": "#/$defs/MessageId" },
+        "thread_id": { "$ref": "#/$defs/ThreadId" },
+        "model": { "type": "string" },
+        "agent_version_id": { "$ref": "#/$defs/AgentVersionId" }
+      },
+      "required": ["seq", "protocol", "turn_id", "segment", "message_id", "thread_id", "model", "agent_version_id"],
+      "additionalProperties": true
+    },
+    "DeltaEvent": {
+      "type": "object",
+      "description": "Assistant text delta.",
+      "properties": {
+        "seq": { "$ref": "#/$defs/Seq" },
+        "text": { "type": "string" }
+      },
+      "required": ["seq", "text"],
+      "additionalProperties": true
+    },
+    "ToolCallEvent": {
+      "type": "object",
+      "description": "One tool call, streamed in three phases. `args` at phase end is complete canonical JSON and is authoritative over concatenated deltas. `permission_class` comes from the registered tool so the SDK can stage the confirmation card before the arguments finish streaming. `executor` is \"client\" in v1 (\"server\" reserved).",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "seq": { "$ref": "#/$defs/Seq" },
+            "phase": { "const": "start" },
+            "tool_call_id": { "$ref": "#/$defs/ToolCallId" },
+            "tool_name": { "type": "string" },
+            "executor": { "type": "string", "enum": ["client", "server"] },
+            "permission_class": { "type": "string", "enum": ["read", "write", "destructive"] }
+          },
+          "required": ["seq", "phase", "tool_call_id", "tool_name", "executor", "permission_class"],
+          "additionalProperties": true
+        },
+        {
+          "type": "object",
+          "properties": {
+            "seq": { "$ref": "#/$defs/Seq" },
+            "phase": { "const": "delta" },
+            "tool_call_id": { "$ref": "#/$defs/ToolCallId" },
+            "args_delta": { "type": "string", "description": "Raw JSON fragment; enables progressive argument rendering. Consumers may ignore deltas entirely." }
+          },
+          "required": ["seq", "phase", "tool_call_id", "args_delta"],
+          "additionalProperties": true
+        },
+        {
+          "type": "object",
+          "properties": {
+            "seq": { "$ref": "#/$defs/Seq" },
+            "phase": { "const": "end" },
+            "tool_call_id": { "$ref": "#/$defs/ToolCallId" },
+            "args": { "type": "object", "additionalProperties": true }
+          },
+          "required": ["seq", "phase", "tool_call_id", "args"],
+          "additionalProperties": true
+        }
+      ]
+    },
+    "UsageEvent": {
+      "type": "object",
+      "description": "One per provider call; additive across a stream.",
+      "properties": {
+        "seq": { "$ref": "#/$defs/Seq" },
+        "provider_call": { "type": "integer", "minimum": 0 },
+        "model": { "type": "string" },
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "output_tokens": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["seq", "provider_call", "model", "input_tokens", "output_tokens"],
+      "additionalProperties": true
+    },
+    "ErrorEvent": {
+      "type": "object",
+      "description": "Non-terminal by itself; always followed by done. `code` comes from error-codes.json (additively growing); `message` is user-safe English — clients map `code` to localized strings.",
+      "properties": {
+        "seq": { "$ref": "#/$defs/Seq" },
+        "failure_class": { "$ref": "#/$defs/FailureClass" },
+        "code": { "type": "string" },
+        "message": { "type": "string" },
+        "retryable": { "type": "boolean" },
+        "upstream": { "$ref": "#/$defs/Upstream" }
+      },
+      "required": ["seq", "failure_class", "code", "message", "retryable"],
+      "additionalProperties": true
+    },
+    "DoneEvent": {
+      "type": "object",
+      "description": "Always last, exactly once. `awaiting_client_tools` ends the segment pending client execution; the turn continues via a tool_results POST.",
+      "properties": {
+        "seq": { "$ref": "#/$defs/Seq" },
+        "status": { "type": "string", "enum": ["complete", "awaiting_client_tools", "error", "cancelled"] },
+        "turn_id": { "$ref": "#/$defs/TurnId" },
+        "pending_tool_call_ids": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ToolCallId" },
+          "minItems": 1
+        }
+      },
+      "required": ["seq", "status", "turn_id"],
+      "if": { "properties": { "status": { "const": "awaiting_client_tools" } } },
+      "then": { "required": ["seq", "status", "turn_id", "pending_tool_call_ids"] },
+      "additionalProperties": true
+    }
+  }
+}

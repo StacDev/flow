@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "description": "The additively growing error-code registry. `failure_class` says who failed; `http` is the status an HTTP transport would use; SSE error events carry the same code and class. Clients map `code` to localized strings; `message` on the wire is user-safe English.",
+  "codes": {
+    "validation_failed": { "failure_class": "gateway", "http": 422, "retryable": false, "description": "The request failed validation before it was sent." },
+    "provider_error": { "failure_class": "provider", "http": 502, "retryable": true, "description": "The model provider failed; upstream carries {provider, status, code}." },
+    "provider_rate_limited": { "failure_class": "provider", "http": 429, "retryable": true, "description": "The developer's provider key is rate-limited or out of quota upstream." },
+    "provider_auth_failed": { "failure_class": "provider", "http": 502, "retryable": false, "description": "The provider rejected the API key." },
+    "segment_timeout": { "failure_class": "timeout", "http": 504, "retryable": true, "description": "The provider stream stalled past the segment deadline." },
+    "cancelled": { "failure_class": "cancelled", "http": 499, "retryable": false, "description": "The client stopped the stream; the segment ends done{cancelled}." }
+  }
+}

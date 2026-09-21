@@ -1,6 +1,6 @@
 # Flow UI Playground
 
-The workbench for [flow_ui](../): every component on a stage, with variant
+The workbench for [flow_ui](../packages/flow_ui/): every component on a stage, with variant
 pills and the code that renders them.
 
 ```bash

@@ -28,13 +28,14 @@ environment:
 # dependencies can be manually updated by changing the version numbers below to
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
+resolution: workspace
+
 dependencies:
   flutter:
     sdk: flutter
   material_ui: ^1.0.0
   # The component library under demo.
-  flow_ui:
-    path: ../
+  flow_ui: ^0.4.0
   # Renders the logo's SVG asset — app-only.
   flutter_svg: ^2.0.10
   # The icon set the design is drawn in.

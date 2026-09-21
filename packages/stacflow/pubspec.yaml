@@ -1,0 +1,23 @@
+name: stacflow
+description: Streaming AI chat for Flutter on flow_ui, talking to Gemini, OpenAI or Claude with your own API key.
+version: 0.1.0
+homepage: https://flowui.stac.dev/
+repository: https://github.com/StacDev/flow_ui/tree/main/packages/stacflow
+issue_tracker: https://github.com/StacDev/flow_ui/issues
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.44.0"
+
+resolution: workspace
+
+dependencies:
+  flow_ui: ^0.4.0
+  flutter:
+    sdk: flutter
+  http: ^1.6.0
+  material_ui: ^1.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

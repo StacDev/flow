@@ -4,7 +4,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## What this is
 
-**flow_ui** is a chat/assistant UI component library for Flutter — the presentation layer for AI assistant interfaces. It is a plain Flutter package (no codegen, no melos). Downstream packages depend on the public API exported from `lib/flow_ui.dart`, so treat it as a compatibility surface.
+**flow_ui** is a chat/assistant UI component library for Flutter — the presentation layer for AI assistant interfaces. It is a plain Flutter package (no codegen) at `packages/flow_ui/`, inside a pub workspace driven by melos. Downstream packages depend on the public API exported from `lib/flow_ui.dart`, so treat it as a compatibility surface.
 
 Two hard constraints shape everything here:
 
@@ -15,19 +15,24 @@ The theme, the conversation components (message, thread, streaming text, actions
 
 ## Layout
 
-- Package at the repo root: `lib/`, `test/`, `pubspec.yaml`.
-- `playground/` — the Flow UI Playground: a full Flutter app depending on the package via `path: ../`. Use it to demo and manually exercise components (every component has a stage demo, with variant pills and code snippets).
+- Root `pubspec.yaml` is the pub workspace (members under `workspace:`) with the melos scripts; root `analysis_options.yaml` (very_good_analysis) governs `tool/` and the SDK package only.
+- `packages/flow_ui/` — the published package: `lib/`, `example/` (the README's chat screen against Gemini), `assets/`, its own flutter_lints `analysis_options.yaml` and `.pubignore`.
+- `packages/stacflow/` — the StacFlow SDK package (see "SDK package"), with `example/` (the README's chat screen against Gemini; flutter_lints like the flow_ui example).
+- `playground/` — the Flow UI Playground: a full Flutter app and workspace member depending on `flow_ui: ^0.4.0`. Use it to demo and manually exercise components (every component has a stage demo, with variant pills and code snippets).
+- `docs/` — the Astro site behind flowui.stac.dev. `contracts/` — the SDK wire contract.
 
 ## Commands
+
+**Don't write comments unless asked.** No doc comments, file headers or inline explanations in new or edited code; the code and the commit message carry the intent. The one exception is a comment a lint requires (for example `document_ignores` above an `// ignore`), kept to one line. Public API dartdoc is written only when the user asks for it.
 
 From the repo root:
 
 ```bash
-flutter test                                  # all tests
-flutter test test/some_widget_test.dart       # single file
-flutter test --plain-name "some test name"    # single test by name
-flutter analyze
-dart format .
+flutter pub get                    # resolves the whole workspace
+dart run melos run analyze         # dart analyze --fatal-infos in every member
+dart run melos run format
+dart run melos run test            # SDK package tests; flow_ui has none yet
+cd packages/flow_ui && flutter analyze && flutter pub publish --dry-run
 ```
 
 Playground app:
@@ -37,6 +42,22 @@ cd playground
 flutter pub get
 flutter run -d chrome    # or any device
 ```
+
+## SDK package
+
+`packages/stacflow` is the StacFlow SDK: `StacFlowChat` (the controller) and `StacFlowChatView` on flow_ui, wired to Gemini, OpenAI and Claude with the developer's own key. One entrypoint, `package:stacflow/stacflow.dart`, which also re-exports flow_ui. Layout: `src/chat` (controller, state, view, and the flow_ui-to-wire reduction in `wire_history.dart`), `src/transport` (the `TurnTransport` seam, `TurnRequest` and the wire types, ids, the SSE parser; pure Dart), `src/providers` (the interface, the shared HTTP runner, one adapter per provider; pure Dart), `src/tools` (`Tool`, the call records and `runToolLoop`, the client-side tool loop shared by the controller and the smoke script; pure Dart). Rules:
+
+- `stacflow` depends on `flow_ui`, never the reverse (CI grep).
+- Adapters emit the `SseEvent` union: `start` first, one `done` last, `seq` from 0. The runner in `turn_runner.dart` owns HTTP, abort, timeouts, key scrubbing and the tool-call bookkeeping (ids, argument buffering, the upgrade of `complete()` to `done{awaiting_client_tools}`); an adapter only declares `TurnRequest.tools`, maps frames, encodes the wire tool parts in history and replays its own raw content within a turn where the provider requires it (Gemini signatures and ids, Claude thinking blocks).
+- The loop in `tool_loop.dart` owns dispatch, approval, timeouts, abort and the continuation segments; the controller only renders blocks into parts, keeps `ChatState.toolCalls`, and answers confirmations. `contracts/` is unchanged by tools: provider call ids ride inside the `tc_` ids.
+- The API key is a private field set on exactly one header, and never appears in URLs, logs, `toString` or error text.
+- No tests for now. Verify with `dart analyze --fatal-infos`, the smoke script (`cd packages/stacflow && dart run --define=PROVIDER=gemini --define=GEMINI_API_KEY=... tool/smoke.dart`, also `anthropic` and `openai`; `--define=ABORT_AFTER_FIRST_DELTA=true` and `--define=IMAGE=path.png` exercise abort and image input; `--define=TOOLS=true` registers a `get_time` tool and runs the loop, with `TOOL_PERMISSION=destructive` and `DECLINE=true` for the approval paths), and the example app (`cd packages/stacflow/example && flutter run` with the key in `lib/env.dart`, copied from `lib/env.example.dart` and gitignored; the `stacflow-example` entry in `.claude/launch.json` serves it on port 8124). Keep the example the runnable form of the README quickstart, against Gemini only, with the `set_theme` tool as its one tool.
+
+`contracts/` is the wire contract (SSE events, error codes): the specification the SDK is held to, kept as prose and JSON Schema. Nothing generates code from it. The Dart types live beside the rest of the transport layer in `packages/stacflow/lib/src/transport/sse_events.dart` and `error_codes.dart`, hand-written and owned like any other source file, so an edit under `contracts/` means editing those two files in the same commit.
+
+## Releases
+
+Per-package tags: `flow_ui-v<version>` publishes `packages/flow_ui` and deploys the docs site (`.github/workflows/publish.yml`). Before tagging, bump `version:` in `packages/flow_ui/pubspec.yaml`, the `flow_ui:` constraint in `packages/flow_ui/example`, `playground` and `packages/stacflow` (pre-1.0 caret ranges), and `CHANGELOG.md`. `stacflow-v<version>` publishes `packages/stacflow` the same way; before tagging, bump `version:` in `packages/stacflow/pubspec.yaml`, the `stacflow:` constraint in `packages/stacflow/example`, and its `CHANGELOG.md`. The pana gate wants a perfect score from both packages.
 
 ## Commits
 

@@ -1,0 +1,29 @@
+# Replaces .gitignore for publishing.
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+*.iml
+*.ipr
+*.iws
+.idea/
+.env
+.metadata
+pubspec.lock
+**/doc/api/
+.dart_tool/
+.flutter-plugins-dependencies
+build/
+coverage/
+doc/
+tool/
+
+# The workspace pubspec cannot resolve outside this repo; the example ships
+# as readable source, not as a standalone package.
+example/pubspec.yaml
