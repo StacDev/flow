@@ -47,10 +47,15 @@ final class WireTextPart extends WirePart {
 
 /// An inline image.
 final class WireImagePart extends WirePart {
-  const WireImagePart({required this.bytes, required this.mimeType});
+  const WireImagePart({
+    required this.bytes,
+    required this.mimeType,
+    this.label,
+  });
 
   final Uint8List bytes;
   final String mimeType;
+  final String? label;
 }
 
 /// The text that stands in for an attachment a provider call cannot carry,

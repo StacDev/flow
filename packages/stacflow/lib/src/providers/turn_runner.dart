@@ -481,7 +481,7 @@ List<WireMessage> withSupportedImages(
           if (part is WireImagePart &&
               (message.role != WireRole.user ||
                   !imageTypes.contains(part.mimeType)))
-            WireTextPart(unsentAttachmentText(null, part.mimeType))
+            WireTextPart(unsentAttachmentText(part.label, part.mimeType))
           else
             part,
       ],

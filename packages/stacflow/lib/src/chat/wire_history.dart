@@ -112,7 +112,11 @@ List<WirePart> _wirePartsOf(List<FlowMessagePart> parts) {
         out.add(WireTextPart(text));
       case FlowAttachmentPart(:final attachments):
         for (final attachment in attachments) {
-          final image = _imageOf(attachment.bytes, attachment.mimeType);
+          final image = _imageOf(
+            attachment.bytes,
+            attachment.mimeType,
+            attachment.label,
+          );
           out.add(
             image ??
                 WireTextPart(
@@ -121,7 +125,7 @@ List<WirePart> _wirePartsOf(List<FlowMessagePart> parts) {
           );
         }
       case FlowImagePart(:final bytes, :final mimeType, :final semanticLabel):
-        final image = _imageOf(bytes, mimeType);
+        final image = _imageOf(bytes, mimeType, semanticLabel);
         out.add(
           image ?? WireTextPart(unsentAttachmentText(semanticLabel, mimeType)),
         );
@@ -138,9 +142,9 @@ List<WirePart> _wirePartsOf(List<FlowMessagePart> parts) {
   return out;
 }
 
-WireImagePart? _imageOf(Uint8List? bytes, String? mimeType) {
+WireImagePart? _imageOf(Uint8List? bytes, String? mimeType, String? label) {
   if (bytes == null || mimeType == null || !mimeType.startsWith('image/')) {
     return null;
   }
-  return WireImagePart(bytes: bytes, mimeType: mimeType);
+  return WireImagePart(bytes: bytes, mimeType: mimeType, label: label);
 }
