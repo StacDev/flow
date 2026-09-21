@@ -4,10 +4,10 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
-import 'package:stacflow/src/generated/error_codes.dart';
-import 'package:stacflow/src/generated/sse_events.dart';
 import 'package:stacflow/src/providers/provider.dart';
 import 'package:stacflow/src/tools/tool.dart';
+import 'package:stacflow/src/transport/error_codes.dart';
+import 'package:stacflow/src/transport/sse_events.dart';
 import 'package:stacflow/src/transport/sse_parser.dart';
 import 'package:stacflow/src/transport/turn_ids.dart';
 import 'package:stacflow/src/transport/turn_request.dart';

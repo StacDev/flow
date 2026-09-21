@@ -1,4 +1,4 @@
-import 'package:stacflow/src/generated/sse_events.dart';
+import 'package:stacflow/src/transport/sse_events.dart';
 import 'package:stacflow/src/transport/turn_request.dart';
 
 /// Where a turn's events come from: a provider today, a gateway later.

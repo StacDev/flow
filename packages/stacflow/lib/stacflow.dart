@@ -9,8 +9,6 @@ export 'src/chat/chat_state.dart';
 export 'src/chat/stacflow_chat.dart';
 export 'src/chat/stacflow_chat_view.dart';
 export 'src/errors.dart';
-export 'src/generated/error_codes.dart';
-export 'src/generated/sse_events.dart';
 export 'src/providers/anthropic_provider.dart' show AnthropicProvider;
 export 'src/providers/gemini_provider.dart' show GeminiProvider;
 export 'src/providers/openai_provider.dart' show OpenAIProvider;
@@ -19,6 +17,8 @@ export 'src/strings.dart';
 export 'src/tools/tool.dart';
 export 'src/tools/tool_loop.dart'
     show ToolApprover, ToolCallObserver, runToolLoop;
+export 'src/transport/error_codes.dart';
+export 'src/transport/sse_events.dart';
 export 'src/transport/turn_ids.dart';
 export 'src/transport/turn_request.dart';
 export 'src/transport/turn_transport.dart';

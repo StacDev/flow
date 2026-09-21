@@ -7,11 +7,11 @@ import 'package:flutter/services.dart';
 import 'package:stacflow/src/chat/chat_state.dart';
 import 'package:stacflow/src/chat/wire_history.dart';
 import 'package:stacflow/src/errors.dart';
-import 'package:stacflow/src/generated/sse_events.dart';
 import 'package:stacflow/src/providers/provider.dart';
 import 'package:stacflow/src/strings.dart';
 import 'package:stacflow/src/tools/tool.dart';
 import 'package:stacflow/src/tools/tool_loop.dart';
+import 'package:stacflow/src/transport/sse_events.dart';
 import 'package:stacflow/src/transport/turn_ids.dart';
 import 'package:stacflow/src/transport/turn_request.dart';
 

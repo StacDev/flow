@@ -19,7 +19,7 @@ The theme, the conversation components (message, thread, streaming text, actions
 - `packages/flow_ui/` — the published package: `lib/`, `example/` (the README's chat screen against Gemini), `assets/`, its own flutter_lints `analysis_options.yaml` and `.pubignore`.
 - `packages/stacflow/` — the StacFlow SDK package (see "SDK package"), with `example/` (the README's chat screen against Gemini; flutter_lints like the flow_ui example).
 - `playground/` — the Flow UI Playground: a full Flutter app and workspace member depending on `flow_ui: ^0.4.0`. Use it to demo and manually exercise components (every component has a stage demo, with variant pills and code snippets).
-- `docs/` — the Astro site behind flowui.stac.dev. `contracts/` and `tool/` — the SDK wire contract and its codegen.
+- `docs/` — the Astro site behind flowui.stac.dev. `contracts/` — the SDK wire contract.
 
 ## Commands
 
@@ -50,19 +50,12 @@ flutter run -d chrome    # or any device
 `packages/stacflow` is the StacFlow SDK: `StacFlowChat` (the controller) and `StacFlowChatView` on flow_ui, wired to Gemini, OpenAI and Claude with the developer's own key. One entrypoint, `package:stacflow/stacflow.dart`, which also re-exports flow_ui. Layout: `src/chat` (controller, state, view, and the flow_ui-to-wire reduction in `wire_history.dart`), `src/transport` (the `TurnTransport` seam, `TurnRequest` and the wire types, ids, the SSE parser; pure Dart), `src/providers` (the interface, the shared HTTP runner, one adapter per provider; pure Dart), `src/tools` (`Tool`, the call records and `runToolLoop`, the client-side tool loop shared by the controller and the smoke script; pure Dart). Rules:
 
 - `stacflow` depends on `flow_ui`, never the reverse (CI grep).
-- Adapters emit the generated `SseEvent` union: `start` first, one `done` last, `seq` from 0. The runner in `turn_runner.dart` owns HTTP, abort, timeouts, key scrubbing and the tool-call bookkeeping (ids, argument buffering, the upgrade of `complete()` to `done{awaiting_client_tools}`); an adapter only declares `TurnRequest.tools`, maps frames, encodes the wire tool parts in history and replays its own raw content within a turn where the provider requires it (Gemini signatures and ids, Claude thinking blocks).
+- Adapters emit the `SseEvent` union: `start` first, one `done` last, `seq` from 0. The runner in `turn_runner.dart` owns HTTP, abort, timeouts, key scrubbing and the tool-call bookkeeping (ids, argument buffering, the upgrade of `complete()` to `done{awaiting_client_tools}`); an adapter only declares `TurnRequest.tools`, maps frames, encodes the wire tool parts in history and replays its own raw content within a turn where the provider requires it (Gemini signatures and ids, Claude thinking blocks).
 - The loop in `tool_loop.dart` owns dispatch, approval, timeouts, abort and the continuation segments; the controller only renders blocks into parts, keeps `ChatState.toolCalls`, and answers confirmations. `contracts/` is unchanged by tools: provider call ids ride inside the `tc_` ids.
 - The API key is a private field set on exactly one header, and never appears in URLs, logs, `toString` or error text.
 - No tests for now. Verify with `dart analyze --fatal-infos`, the smoke script (`cd packages/stacflow && dart run --define=PROVIDER=gemini --define=GEMINI_API_KEY=... tool/smoke.dart`, also `anthropic` and `openai`; `--define=ABORT_AFTER_FIRST_DELTA=true` and `--define=IMAGE=path.png` exercise abort and image input; `--define=TOOLS=true` registers a `get_time` tool and runs the loop, with `TOOL_PERMISSION=destructive` and `DECLINE=true` for the approval paths), and the example app (`cd packages/stacflow/example && flutter run` with the key in `lib/env.dart`, copied from `lib/env.example.dart` and gitignored; the `stacflow-example` entry in `.claude/launch.json` serves it on port 8124). Keep the example the runnable form of the README quickstart, against Gemini only, with the `set_theme` tool as its one tool.
 
-`contracts/` is the wire contract (SSE events, error codes); CI regenerates the Dart from it and fails on drift. After editing anything under `contracts/`:
-
-```bash
-dart run tool/contracts_gen.dart                      # regenerates packages/stacflow/lib/src/generated
-dart format packages/stacflow/lib/src/generated
-```
-
-Never hand-edit the generated directory: the analyzer excludes it and CI regenerates it.
+`contracts/` is the wire contract (SSE events, error codes): the specification the SDK is held to, kept as prose and JSON Schema. Nothing generates code from it. The Dart types live beside the rest of the transport layer in `packages/stacflow/lib/src/transport/sse_events.dart` and `error_codes.dart`, hand-written and owned like any other source file, so an edit under `contracts/` means editing those two files in the same commit.
 
 ## Releases
 

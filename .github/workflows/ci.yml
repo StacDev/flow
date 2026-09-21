@@ -132,24 +132,3 @@ jobs:
             || { echo "::error::flow_ui is the presentation layer; the SDK depends on it, never the reverse"; exit 1; }
           ! grep -nE "^\s*stacflow:" packages/flow_ui/pubspec.yaml \
             || { echo "::error::flow_ui must not depend on the SDK package"; exit 1; }
-
-  contracts:
-    name: Contracts
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
-      - run: flutter pub get
-
-      - name: Generated Dart matches contracts/
-        run: |
-          dart run tool/contracts_gen.dart
-          dart format packages/stacflow/lib/src/generated >/dev/null
-          git add -N packages/stacflow/lib/src/generated
-          git diff --exit-code -- packages/stacflow/lib/src/generated \
-            || { echo "::error::generated types are stale: run dart run tool/contracts_gen.dart && dart format packages/stacflow/lib/src/generated"; exit 1; }

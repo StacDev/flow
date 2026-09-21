@@ -1,10 +1,6 @@
-// GENERATED CODE - DO NOT EDIT.
-// Source: contracts/ - regenerate with `dart run tool/contracts_gen.dart`.
-// coverage:ignore-file
+import 'package:stacflow/src/transport/sse_events.dart';
 
-import 'sse_events.dart';
-
-/// One entry of the error-code registry (contracts/error-codes.json).
+/// One entry of the error-code registry (`contracts/error-codes.json`).
 final class ErrorCodeInfo {
   const ErrorCodeInfo({
     required this.failureClass,
@@ -12,6 +8,7 @@ final class ErrorCodeInfo {
     required this.retryable,
     required this.description,
   });
+
   final FailureClass failureClass;
   final int http;
   final bool retryable;
@@ -28,37 +25,41 @@ abstract final class ErrorCodes {
   static const String cancelled = 'cancelled';
 
   static const Map<String, ErrorCodeInfo> registry = {
-    'validation_failed': ErrorCodeInfo(
+    validationFailed: ErrorCodeInfo(
       failureClass: FailureClass.gateway,
       http: 422,
       retryable: false,
       description: 'The request failed validation before it was sent.',
     ),
-    'provider_error': ErrorCodeInfo(
+    providerError: ErrorCodeInfo(
       failureClass: FailureClass.provider,
       http: 502,
       retryable: true,
-      description: 'The model provider failed; upstream carries {provider, status, code}.',
+      description:
+          'The model provider failed; upstream carries '
+          '{provider, status, code}.',
     ),
-    'provider_rate_limited': ErrorCodeInfo(
+    providerRateLimited: ErrorCodeInfo(
       failureClass: FailureClass.provider,
       http: 429,
       retryable: true,
-      description: 'The developer\'s provider key is rate-limited or out of quota upstream.',
+      description:
+          "The developer's provider key is rate-limited or out of quota "
+          'upstream.',
     ),
-    'provider_auth_failed': ErrorCodeInfo(
+    providerAuthFailed: ErrorCodeInfo(
       failureClass: FailureClass.provider,
       http: 502,
       retryable: false,
       description: 'The provider rejected the API key.',
     ),
-    'segment_timeout': ErrorCodeInfo(
+    segmentTimeout: ErrorCodeInfo(
       failureClass: FailureClass.timeout,
       http: 504,
       retryable: true,
       description: 'The provider stream stalled past the segment deadline.',
     ),
-    'cancelled': ErrorCodeInfo(
+    cancelled: ErrorCodeInfo(
       failureClass: FailureClass.cancelled,
       http: 499,
       retryable: false,

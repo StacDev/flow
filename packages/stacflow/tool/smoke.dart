@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:stacflow/src/generated/sse_events.dart';
 import 'package:stacflow/src/providers/anthropic_provider.dart';
 import 'package:stacflow/src/providers/gemini_provider.dart';
 import 'package:stacflow/src/providers/openai_provider.dart';
 import 'package:stacflow/src/providers/provider.dart';
 import 'package:stacflow/src/tools/tool.dart';
 import 'package:stacflow/src/tools/tool_loop.dart';
+import 'package:stacflow/src/transport/sse_events.dart';
 import 'package:stacflow/src/transport/turn_ids.dart';
 import 'package:stacflow/src/transport/turn_request.dart';
 

@@ -1,17 +1,15 @@
-// GENERATED CODE - DO NOT EDIT.
-// Source: contracts/ - regenerate with `dart run tool/contracts_gen.dart`.
-// coverage:ignore-file
-
-/// The StacFlow SSE protocol v1 (contracts/sse-events.schema.json).
+/// The StacFlow SSE protocol v1, specified in
+/// `contracts/sse-events.schema.json`.
 ///
-/// `SseEvent.decode` NEVER throws: unknown event names and payloads that
-/// fail to decode become [SseUnknownEvent] - the additive-evolution
-/// compatibility mechanism. Local-mode provider adapters emit this same
-/// union, so cloud and local modes share one event grammar.
+/// [SseEvent.decode] never throws: unknown event names and payloads that fail
+/// to decode become [SseUnknownEvent], which is how the protocol evolves
+/// additively. The provider adapters emit this same union, so cloud and local
+/// modes share one event grammar.
 library;
 
 sealed class SseEvent {
   const SseEvent();
+
   int get seq;
 
   /// Decodes one SSE frame. Never throws.
@@ -35,15 +33,16 @@ sealed class SseEvent {
 /// Passthrough for event names or shapes this build does not know.
 final class SseUnknownEvent extends SseEvent {
   const SseUnknownEvent(this.event, this.data);
+
   final String event;
   final Map<String, dynamic> data;
+
   @override
   int get seq => data['seq'] is int ? data['seq'] as int : -1;
 }
 
 sealed class ToolCallEvent extends SseEvent {
   const ToolCallEvent();
-  String get toolCallId;
 
   factory ToolCallEvent.fromJson(Map<String, dynamic> json) =>
       switch (json['phase'] as String) {
@@ -52,6 +51,8 @@ sealed class ToolCallEvent extends SseEvent {
         'end' => ToolCallEndEvent.fromJson(json),
         final other => throw FormatException('unknown phase: $other'),
       };
+
+  String get toolCallId;
 }
 
 enum FailureClass {
@@ -62,8 +63,10 @@ enum FailureClass {
   timeout('timeout'),
   cancelled('cancelled');
 
-  const FailureClass(this.wire);
+  FailureClass(this.wire);
+
   final String wire;
+
   static FailureClass fromWire(String wire) =>
       values.firstWhere((v) => v.wire == wire);
 }
@@ -72,8 +75,10 @@ enum ToolCallStartEventExecutor {
   client('client'),
   server('server');
 
-  const ToolCallStartEventExecutor(this.wire);
+  ToolCallStartEventExecutor(this.wire);
+
   final String wire;
+
   static ToolCallStartEventExecutor fromWire(String wire) =>
       values.firstWhere((v) => v.wire == wire);
 }
@@ -83,8 +88,10 @@ enum ToolCallStartEventPermissionClass {
   write('write'),
   destructive('destructive');
 
-  const ToolCallStartEventPermissionClass(this.wire);
+  ToolCallStartEventPermissionClass(this.wire);
+
   final String wire;
+
   static ToolCallStartEventPermissionClass fromWire(String wire) =>
       values.firstWhere((v) => v.wire == wire);
 }
@@ -95,8 +102,10 @@ enum DoneEventStatus {
   error('error'),
   cancelled('cancelled');
 
-  const DoneEventStatus(this.wire);
+  DoneEventStatus(this.wire);
+
   final String wire;
+
   static DoneEventStatus fromWire(String wire) =>
       values.firstWhere((v) => v.wire == wire);
 }
@@ -114,22 +123,11 @@ final class Upstream {
   final int? status;
   final String? code;
 
-  Map<String, dynamic> toJson() => <String, dynamic>{}
-    ..addAll(
-      provider == null
-          ? const <String, dynamic>{}
-          : <String, dynamic>{'provider': provider},
-    )
-    ..addAll(
-      status == null
-          ? const <String, dynamic>{}
-          : <String, dynamic>{'status': status},
-    )
-    ..addAll(
-      code == null
-          ? const <String, dynamic>{}
-          : <String, dynamic>{'code': code},
-    );
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    if (provider != null) 'provider': provider,
+    if (status != null) 'status': status,
+    if (code != null) 'code': code,
+  };
 }
 
 final class StartEvent extends SseEvent {
@@ -153,6 +151,7 @@ final class StartEvent extends SseEvent {
     agentVersionId: json['agent_version_id'] as String,
   );
 
+  @override
   final int seq;
   final String turnId;
   final int segment;
@@ -160,10 +159,11 @@ final class StartEvent extends SseEvent {
   final String threadId;
   final String model;
   final String agentVersionId;
+
   int get protocol => 1;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-    'protocol': 1,
+    'protocol': protocol,
     'seq': seq,
     'turn_id': turnId,
     'segment': segment,
@@ -180,6 +180,7 @@ final class DeltaEvent extends SseEvent {
   factory DeltaEvent.fromJson(Map<String, dynamic> json) =>
       DeltaEvent(seq: json['seq'] as int, text: json['text'] as String);
 
+  @override
   final int seq;
   final String text;
 
@@ -208,15 +209,18 @@ final class ToolCallStartEvent extends ToolCallEvent {
         ),
       );
 
+  @override
   final int seq;
+  @override
   final String toolCallId;
   final String toolName;
   final ToolCallStartEventExecutor executor;
   final ToolCallStartEventPermissionClass permissionClass;
+
   String get phase => 'start';
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-    'phase': 'start',
+    'phase': phase,
     'seq': seq,
     'tool_call_id': toolCallId,
     'tool_name': toolName,
@@ -239,13 +243,16 @@ final class ToolCallDeltaEvent extends ToolCallEvent {
         argsDelta: json['args_delta'] as String,
       );
 
+  @override
   final int seq;
+  @override
   final String toolCallId;
   final String argsDelta;
+
   String get phase => 'delta';
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-    'phase': 'delta',
+    'phase': phase,
     'seq': seq,
     'tool_call_id': toolCallId,
     'args_delta': argsDelta,
@@ -263,16 +270,19 @@ final class ToolCallEndEvent extends ToolCallEvent {
       ToolCallEndEvent(
         seq: json['seq'] as int,
         toolCallId: json['tool_call_id'] as String,
-        args: (json['args'] as Map).cast<String, dynamic>(),
+        args: Map<String, dynamic>.from(json['args'] as Map<dynamic, dynamic>),
       );
 
+  @override
   final int seq;
+  @override
   final String toolCallId;
   final Map<String, dynamic> args;
+
   String get phase => 'end';
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-    'phase': 'end',
+    'phase': phase,
     'seq': seq,
     'tool_call_id': toolCallId,
     'args': args,
@@ -296,6 +306,7 @@ final class UsageEvent extends SseEvent {
     outputTokens: json['output_tokens'] as int,
   );
 
+  @override
   final int seq;
   final int providerCall;
   final String model;
@@ -329,9 +340,14 @@ final class ErrorEvent extends SseEvent {
     retryable: json['retryable'] as bool,
     upstream: json['upstream'] == null
         ? null
-        : Upstream.fromJson((json['upstream'] as Map).cast<String, dynamic>()),
+        : Upstream.fromJson(
+            Map<String, dynamic>.from(
+              json['upstream'] as Map<dynamic, dynamic>,
+            ),
+          ),
   );
 
+  @override
   final int seq;
   final FailureClass failureClass;
   final String code;
@@ -339,18 +355,14 @@ final class ErrorEvent extends SseEvent {
   final bool retryable;
   final Upstream? upstream;
 
-  Map<String, dynamic> toJson() =>
-      <String, dynamic>{
-        'seq': seq,
-        'failure_class': failureClass.wire,
-        'code': code,
-        'message': message,
-        'retryable': retryable,
-      }..addAll(
-        upstream == null
-            ? const <String, dynamic>{}
-            : <String, dynamic>{'upstream': upstream!.toJson()},
-      );
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'seq': seq,
+    'failure_class': failureClass.wire,
+    'code': code,
+    'message': message,
+    'retryable': retryable,
+    if (upstream case final upstream?) 'upstream': upstream.toJson(),
+  };
 }
 
 final class DoneEvent extends SseEvent {
@@ -367,19 +379,19 @@ final class DoneEvent extends SseEvent {
     turnId: json['turn_id'] as String,
     pendingToolCallIds: json['pending_tool_call_ids'] == null
         ? null
-        : List<String>.from(json['pending_tool_call_ids'] as List),
+        : List<String>.from(json['pending_tool_call_ids'] as List<dynamic>),
   );
 
+  @override
   final int seq;
   final DoneEventStatus status;
   final String turnId;
   final List<String>? pendingToolCallIds;
 
-  Map<String, dynamic> toJson() =>
-      <String, dynamic>{'seq': seq, 'status': status.wire, 'turn_id': turnId}
-        ..addAll(
-          pendingToolCallIds == null
-              ? const <String, dynamic>{}
-              : <String, dynamic>{'pending_tool_call_ids': pendingToolCallIds},
-        );
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'seq': seq,
+    'status': status.wire,
+    'turn_id': turnId,
+    'pending_tool_call_ids': ?pendingToolCallIds,
+  };
 }

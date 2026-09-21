@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:stacflow/src/generated/sse_events.dart';
 import 'package:stacflow/src/tools/tool.dart';
+import 'package:stacflow/src/transport/sse_events.dart';
 import 'package:stacflow/src/transport/turn_request.dart';
 import 'package:stacflow/src/transport/turn_transport.dart';
 

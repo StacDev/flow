@@ -1,5 +1,5 @@
-import 'package:stacflow/src/generated/sse_events.dart';
 import 'package:stacflow/src/strings.dart';
+import 'package:stacflow/src/transport/sse_events.dart';
 
 /// Who is responsible for a failed turn: the wire classes, plus `runtime`
 /// for faults that never left the device.
