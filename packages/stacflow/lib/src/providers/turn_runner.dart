@@ -189,6 +189,8 @@ final class TurnEmitter {
     _finish(DoneEventStatus.error);
   }
 
+  void close() => _done = true;
+
   void transportFailure(ProviderTransportException exception) {
     if (_done) return;
     _done = true;
@@ -261,6 +263,7 @@ Stream<SseEvent> runTurn({
   void finish() {
     if (finished) return;
     finished = true;
+    emitter.close();
     unawaited(subscription?.cancel());
     if (!abortSignal.isCompleted) abortSignal.complete();
     owned?.close();

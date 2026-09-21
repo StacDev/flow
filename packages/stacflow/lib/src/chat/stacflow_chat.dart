@@ -131,15 +131,22 @@ final class StacFlowChat {
     _finishCancelled(turn);
   }
 
-  /// Drops the failed reply [message] and asks again.
+  /// Drops the failed reply [message] and everything after it, then asks
+  /// again. Ignored when what is left could not be answered.
   Future<void> retry(FlowMessageData message) {
     if (isGenerating) return Future.value();
-    _update(
-      (s) => _withMessages(s, [
-        for (final m in s.messages)
-          if (m.id != message.id) m,
-      ]),
-    );
+    final index = messages.indexWhere((m) => m.id == message.id);
+    if (index == -1) return Future.value();
+    final keep = message.role == FlowMessageRole.user ? index + 1 : index;
+    final remaining = messages.sublist(0, keep);
+    final answerable = [
+      for (final m in remaining)
+        if (m.role != FlowMessageRole.system) m,
+    ];
+    if (answerable.isEmpty || answerable.last.role != FlowMessageRole.user) {
+      return Future.value();
+    }
+    _update((s) => _withMessages(s, remaining));
     return _generate();
   }
 
@@ -167,6 +174,7 @@ final class StacFlowChat {
       for (final part in messages[index].parts)
         if (part is FlowAttachmentPart) ...part.attachments,
     ];
+    if (text.isEmpty && attachments.isEmpty) return Future.value();
     _update(
       (s) => _withMessages(
         s,

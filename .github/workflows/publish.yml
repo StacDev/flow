@@ -68,6 +68,11 @@ jobs:
 
       - run: flutter pub get
 
+      - name: Example key file
+        if: needs.meta.outputs.package == 'stacflow'
+        run: cp lib/env.example.dart lib/env.dart
+        working-directory: packages/stacflow/example
+
       - name: Require a perfect score
         run: |
           dart pub global activate pana

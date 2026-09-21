@@ -23,3 +23,7 @@ build/
 coverage/
 doc/
 tool/
+
+# The workspace pubspec cannot resolve outside this repo; the example ships
+# as readable source, not as a standalone package.
+example/pubspec.yaml
