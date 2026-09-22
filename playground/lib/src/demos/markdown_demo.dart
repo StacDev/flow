@@ -119,7 +119,7 @@ Alignment comes from the delimiter row — left, right, left. Cells carry inline
 ''';
 
 const String _links = '''
-Links report **intent**: try [the docs](https://flowui.stac.dev), the [GitHub repo](https://github.com/StacDev/flow_ui), or the autolink <https://stac.dev> — the package styles the label, hands the host the href, and launches nothing itself.
+Links report **intent**: try [the docs](https://flowui.stac.dev), the [GitHub repo](https://github.com/StacDev/flow), or the autolink <https://stac.dev> — the package styles the label, hands the host the href, and launches nothing itself.
 
 Bare URLs autolink with GFM's trimming: https://stac.dev/docs, the parenthesized https://en.wikipedia.org/wiki/Dart_(programming_language), and www.example.com; a trailing period stays prose: https://flutter.dev.
 
@@ -127,7 +127,7 @@ Without an `onLinkTap`, links render as plain prose — never a styled-but-dead 
 ''';
 
 const String _linksPlain = '''
-The same [docs](https://flowui.stac.dev) link and the same [repo](https://github.com/StacDev/flow_ui) link, with no handler wired.
+The same [docs](https://flowui.stac.dev) link and the same [repo](https://github.com/StacDev/flow) link, with no handler wired.
 ''';
 
 /// Stage demo for `FlowMarkdown` — the typeset document, the streaming

@@ -1,6 +1,6 @@
 # flow_ui docs
 
-The documentation site for [flow_ui](https://github.com/StacDev/flow_ui),
+The documentation site for [flow_ui](https://github.com/StacDev/flow),
 built with [Astro Starlight](https://starlight.astro.build).
 
 ```bash

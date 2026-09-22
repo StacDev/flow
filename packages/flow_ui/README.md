@@ -7,8 +7,8 @@
 <p align="center">
   <a href="https://pub.dev/packages/flow_ui"><img src="https://img.shields.io/pub/v/flow_ui.svg" alt="pub package"></a>
   <a href="https://pub.dev/packages/flow_ui/score"><img src="https://img.shields.io/pub/points/flow_ui" alt="pub points"></a>
-  <a href="https://github.com/StacDev/flow_ui"><img src="https://img.shields.io/github/stars/StacDev/flow_ui?style=flat&logo=github&color=8250df" alt="github stars"></a>
-  <a href="https://github.com/StacDev/flow_ui/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="license: MIT"></a>
+  <a href="https://github.com/StacDev/flow"><img src="https://img.shields.io/github/stars/StacDev/flow?style=flat&logo=github&color=8250df" alt="github stars"></a>
+  <a href="https://github.com/StacDev/flow/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="license: MIT"></a>
 </p>
 
 <p align="center">
@@ -302,7 +302,7 @@ Full documentation lives at [flowui.stac.dev](https://flowui.stac.dev/), and
 every component has a stage in the
 [live playground](https://flowui.stac.dev/playground) — variant pills and
 code snippets included. The playground is also
-[in the repo](https://github.com/StacDev/flow_ui/tree/main/playground) to run
+[in the repo](https://github.com/StacDev/flow/tree/main/playground) to run
 locally:
 
 ```bash

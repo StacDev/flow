@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/StacDev/flow_ui/main/packages/flow_ui/assets/flow_ui_logo.svg" width="76" alt="Flow UI logo">
+  <img src="https://raw.githubusercontent.com/StacDev/flow/main/packages/flow_ui/assets/flow_ui_logo.svg" width="76" alt="Flow UI logo">
 </p>
 
 <h1 align="center">stacflow</h1>
@@ -85,7 +85,7 @@ so every widget it exports is available too.
 
 ## Example
 
-[`example/`](https://github.com/StacDev/flow_ui/tree/main/packages/stacflow/example)
+[`example/`](https://github.com/StacDev/flow/tree/main/packages/stacflow/example)
 is this screen, runnable against Gemini:
 
 ```bash
@@ -198,4 +198,4 @@ written today.
 
 ## License
 
-MIT. Part of the [flow_ui](https://github.com/StacDev/flow_ui) repository.
+MIT. Part of the [flow](https://github.com/StacDev/flow) repository.

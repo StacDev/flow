@@ -4,7 +4,7 @@
 #
 # publishes packages/flow_ui to pub.dev and deploys the docs site (playground
 # included) to Cloudflare Pages. Publishing is OIDC: pub.dev → flow_ui → Admin
-# → Automated publishing must list StacDev/flow_ui with the tag pattern
+# → Automated publishing must list StacDev/flow with the tag pattern
 # `flow_ui-v{{version}}`. A future package gets its own tag glob below, a
 # `case` line in `meta`, and its own pub.dev tag pattern.
 #
