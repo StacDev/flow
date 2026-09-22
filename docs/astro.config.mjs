@@ -118,7 +118,7 @@ export default defineConfig({
 				{
 					icon: 'github',
 					label: 'GitHub',
-					href: 'https://github.com/StacDev/flow_ui',
+					href: 'https://github.com/StacDev/flow',
 				},
 				{
 					icon: 'x.com',
@@ -132,7 +132,7 @@ export default defineConfig({
 				},
 			],
 			editLink: {
-				baseUrl: 'https://github.com/StacDev/flow_ui/edit/main/docs/',
+				baseUrl: 'https://github.com/StacDev/flow/edit/main/docs/',
 			},
 			sidebar: [
 				{
