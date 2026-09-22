@@ -78,14 +78,19 @@ MaterialApp(
 )
 ```
 
-The default typography — Google Sans and Google Sans Code — arrives through
-[google_fonts](https://pub.dev/packages/google_fonts): each cut is fetched
-on first use and cached on the device, so there is no font to bundle. The
-fetch needs network access: `android.permission.INTERNET` in an Android
-app's main manifest (Flutter's template grants it only to debug and profile)
-and the `com.apple.security.network.client` entitlement in a sandboxed macOS
-app; without it text falls back to the platform face. To render offline on
-first launch, ship the files under a `google_fonts/` asset folder.
+The default typography — Google Sans and Google Sans Code — ships with the
+package. Nothing is fetched, so there is no permission, no entitlement and
+no fallback face on the first frame, and your app declares no font of its
+own. Google Sans ships as a Latin subset, which keeps the whole set near a
+megabyte; the scripts it leaves out fall back to the platform face, the way
+CJK does. To set the scale in your own typeface instead:
+
+```dart
+FlowTheme(
+  colors: FlowColors.light,
+  typography: FlowTypography.standard.withFontFamily('Inter'),
+)
+```
 
 ## Build a chat screen
 
@@ -306,6 +311,8 @@ cd playground && flutter run -d chrome
 
 ## License
 
-Code is released under the [MIT License](LICENSE). Google Sans and Google
-Sans Code are fetched from Google Fonts under the
-[SIL Open Font License](https://openfontlicense.org), not bundled.
+Code is released under the [MIT License](LICENSE). The bundled Google Sans
+and Google Sans Code fonts are licensed separately under the
+[SIL Open Font License](https://openfontlicense.org) — see
+[fonts/OFL.txt](fonts/OFL.txt) and
+[fonts/OFL-GoogleSansCode.txt](fonts/OFL-GoogleSansCode.txt).

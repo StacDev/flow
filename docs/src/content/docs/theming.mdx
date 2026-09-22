@@ -117,6 +117,12 @@ one (`titleLargeEmphasised` at w600, `labelLargeEmphasised` at w500), so
 emphasis in a heading or a control never needs an ad-hoc `copyWith`.
 Styles are colorless; components pair them with color tokens at draw time.
 
+Both faces ship with the package — Google Sans at 400 through 700 and
+Google Sans Code at 300 through 800, each weight upright and italic — so
+every cut the scale asks for is a real one and nothing is fetched. Google
+Sans ships as a Latin subset; the scripts it leaves out fall back to the
+platform face.
+
 To keep the scale and swap the face:
 
 ```dart title="Your brand's typeface"

@@ -21,9 +21,6 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
-  # Google Sans and Google Sans Code, fetched from Google Fonts at runtime —
-  # the one dependency outside flutter.dev's packages; no font files ship.
-  google_fonts: ^8.2.1
   material_ui: ^1.0.0
   # The composer's built-in attach button opens this. flutter.dev-published
   # and endorsed on all six platforms, and — unlike image_picker — it adds
@@ -39,4 +36,76 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
+flutter:
+  # Google Sans is the typeface of the Flow UI design file, and Google Sans
+  # Code its code face. Both ship with the package (SIL Open Font License, see
+  # fonts/OFL.txt and fonts/OFL-GoogleSansCode.txt) so the default theme
+  # renders as designed without the host bundling a font, without a font
+  # dependency, and without a network round trip before the first paint.
+  #
+  # Static instances rather than the variable TTFs: Flutter maps FontWeight to
+  # the nearest declared weight, so a weight axis would not be interpolated.
+  # Google Sans is a Latin subset — at 1.95 MB a cut it would otherwise be the
+  # largest thing every host app inherits, and the scripts it drops fall back
+  # to the platform face the way CJK already does. tool/subset_fonts.sh
+  # rebuilds the directory.
+  fonts:
+    - family: GoogleSans
+      fonts:
+        - asset: fonts/GoogleSans-Regular.ttf
+          weight: 400
+        - asset: fonts/GoogleSans-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: fonts/GoogleSans-Medium.ttf
+          weight: 500
+        - asset: fonts/GoogleSans-MediumItalic.ttf
+          weight: 500
+          style: italic
+        - asset: fonts/GoogleSans-SemiBold.ttf
+          weight: 600
+        - asset: fonts/GoogleSans-SemiBoldItalic.ttf
+          weight: 600
+          style: italic
+        - asset: fonts/GoogleSans-Bold.ttf
+          weight: 700
+        - asset: fonts/GoogleSans-BoldItalic.ttf
+          weight: 700
+          style: italic
+    - family: GoogleSansCode
+      fonts:
+        - asset: fonts/GoogleSansCode-Light.ttf
+          weight: 300
+        - asset: fonts/GoogleSansCode-LightItalic.ttf
+          weight: 300
+          style: italic
+        - asset: fonts/GoogleSansCode-Regular.ttf
+          weight: 400
+        - asset: fonts/GoogleSansCode-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: fonts/GoogleSansCode-Medium.ttf
+          weight: 500
+        - asset: fonts/GoogleSansCode-MediumItalic.ttf
+          weight: 500
+          style: italic
+        - asset: fonts/GoogleSansCode-SemiBold.ttf
+          weight: 600
+        - asset: fonts/GoogleSansCode-SemiBoldItalic.ttf
+          weight: 600
+          style: italic
+        - asset: fonts/GoogleSansCode-Bold.ttf
+          weight: 700
+        - asset: fonts/GoogleSansCode-BoldItalic.ttf
+          weight: 700
+          style: italic
+        - asset: fonts/GoogleSansCode-ExtraBold.ttf
+          weight: 800
+        - asset: fonts/GoogleSansCode-ExtraBoldItalic.ttf
+          weight: 800
+          style: italic
+  licenses:
+    - fonts/OFL.txt
+    - fonts/OFL-GoogleSansCode.txt
 

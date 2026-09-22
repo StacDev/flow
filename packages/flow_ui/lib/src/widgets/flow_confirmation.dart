@@ -266,8 +266,7 @@ class FlowConfirmation extends StatelessWidget {
           _ConfirmationButton(
             label: approveLabel,
             onTap: onApprove!,
-            textStyle: FlowTypography.recut(
-              typography.labelMedium,
+            textStyle: typography.labelMedium.copyWith(
               fontWeight: FontWeight.w600,
             ),
             background: effective?.approveButtonColor ?? colors.inverseSurface,

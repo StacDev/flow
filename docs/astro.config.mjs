@@ -43,7 +43,8 @@ export default defineConfig({
 			customCss: ['./src/styles/theme.css'],
 			logo: { src: './src/assets/flow-ui-logo.svg', alt: '' },
 			head: [
-				// Google Sans from Google Fonts — the same source the package fetches at runtime.
+				// Google Sans from Google Fonts, for this site's own chrome. The package
+				// bundles its own copy; this is the web page, not the Flutter build.
 				{ tag: 'link', attrs: { rel: 'preconnect', href: 'https://fonts.googleapis.com' } },
 				{
 					tag: 'link',

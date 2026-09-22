@@ -23,10 +23,8 @@ dependencies:
   flow_ui: ^0.4.0
 ```
 
-That brings in the Flutter SDK, `material_ui`, `file_selector` — the
-flutter.dev plugin behind the composer's attach button — and
-`google_fonts`, which fetches Google Sans and Google Sans Code at
-runtime. Nothing else.
+That brings in the Flutter SDK, `material_ui` and `file_selector` — the
+flutter.dev plugin behind the composer's attach button. Nothing else.
 
 ## Wire the theme
 
@@ -47,12 +45,12 @@ MaterialApp(
 	back to a preset matched to the ambient `ThemeData.brightness`.
 </Aside>
 
-Google Sans — the face the design system is set in — is fetched through
-`google_fonts` on first use, so there is nothing to add to your `pubspec.yaml`
-fonts section. The fetch needs network access: `android.permission.INTERNET`
-in the main Android manifest (Flutter grants it only to debug and profile)
-and the `com.apple.security.network.client` entitlement in a sandboxed macOS
-app. To render offline on first launch, ship the files under `google_fonts/`.
+Google Sans — the face the design system is set in — ships with the package,
+along with Google Sans Code for code, so there is nothing to add to your
+`pubspec.yaml` fonts section and nothing to grant. No network access, no
+entitlement, and no fallback face on the first frame. Google Sans ships as a
+Latin subset; text in the scripts it leaves out falls back to the platform
+face, the way CJK does.
 
 ## Render a conversation
 
