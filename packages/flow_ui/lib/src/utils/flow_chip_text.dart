@@ -1,7 +1,6 @@
 import 'package:flutter/rendering.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../theme/flow_typography.dart';
 import 'flow_selection.dart';
 
 /// Internal — not exported from the package barrel.
@@ -83,7 +82,7 @@ class _ChipParagraph extends StatelessWidget {
     final defaults = DefaultTextStyle.of(context);
     var style = defaults.style;
     if (MediaQuery.boldTextOf(context)) {
-      style = FlowTypography.recut(style, fontWeight: FontWeight.bold);
+      style = style.copyWith(fontWeight: FontWeight.bold);
     }
     final registrar = SelectionContainer.maybeOf(context);
     final selectionStyle = DefaultSelectionStyle.of(context);

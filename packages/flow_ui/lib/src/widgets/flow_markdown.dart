@@ -810,10 +810,10 @@ class _FlowMarkdownState extends State<FlowMarkdown> {
           .merge(_mdStyle?.inlineCodeStyle);
     }
     if (run.bold) {
-      style = FlowTypography.recut(style, fontWeight: FontWeight.w600);
+      style = style.copyWith(fontWeight: FontWeight.w600);
     }
     if (run.italic) {
-      style = FlowTypography.recut(style, fontStyle: FontStyle.italic);
+      style = style.copyWith(fontStyle: FontStyle.italic);
     }
 
     final linked = run.linkHref != null && widget.onLinkTap != null;

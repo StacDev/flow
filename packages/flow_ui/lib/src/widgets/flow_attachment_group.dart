@@ -5,7 +5,6 @@ import 'package:material_ui/material_ui.dart';
 
 import '../models/flow_attachment.dart';
 import '../theme/flow_theme.dart';
-import '../theme/flow_typography.dart';
 import '../utils/flow_attachment_error.dart';
 import '../utils/flow_circle_button.dart';
 import 'flow_attachment_preview.dart';
@@ -476,10 +475,10 @@ class _TypePill extends StatelessWidget {
               child: SelectionContainer.disabled(
                 child: Text(
                   kind,
-                  style: FlowTypography.recut(
-                    context.flowTypography.labelSmall,
+                  style: context.flowTypography.labelSmall.copyWith(
                     fontWeight: FontWeight.w600,
-                  ).copyWith(color: colors.surfaceBright),
+                    color: colors.surfaceBright,
+                  ),
                 ),
               ),
             ),

@@ -348,10 +348,10 @@ class _TriggerPillState extends State<_TriggerPill> {
                   const SizedBox(width: _glyphGap),
                   Text(
                     widget.label,
-                    style: FlowTypography.recut(
-                      typography.labelMedium,
+                    style: typography.labelMedium.copyWith(
                       fontWeight: FontWeight.w600,
-                    ).copyWith(color: foreground),
+                      color: foreground,
+                    ),
                   ),
                 ],
               ),

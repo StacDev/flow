@@ -2,7 +2,6 @@ import 'package:material_ui/material_ui.dart';
 
 import '../styles/flow_error_state_style.dart';
 import '../theme/flow_theme.dart';
-import '../theme/flow_typography.dart';
 import '../utils/flow_selection.dart';
 
 /// A failure surface: an error glyph and a host-written explanation on a
@@ -255,10 +254,10 @@ class _RetryButtonState extends State<_RetryButton> {
                   SelectionContainer.disabled(
                     child: Text(
                       label,
-                      style: FlowTypography.recut(
-                        typography.labelMedium,
+                      style: typography.labelMedium.copyWith(
                         fontWeight: FontWeight.w600,
-                      ).copyWith(color: foreground),
+                        color: foreground,
+                      ),
                     ),
                   ),
                 ],

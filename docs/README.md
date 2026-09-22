@@ -9,8 +9,8 @@ npm run dev      # http://localhost:4321
 npm run build    # static site in dist/
 ```
 
-Google Sans loads from Google Fonts via the `<link>` in `astro.config.mjs` —
-the same source the package fetches from at runtime. Brand colors in
+Google Sans loads from Google Fonts via the `<link>` in `astro.config.mjs`,
+for this site's own chrome — the package bundles its own copy. Brand colors in
 `src/styles/theme.css` mirror the package's design tokens in
 `packages/flow_ui/lib/src/theme/flow_colors.dart`.
 

@@ -1,5 +1,8 @@
 ## 0.4.0 (unreleased)
 
+- Bundles Google Sans and Google Sans Code with the package instead of fetching them through google_fonts, which is dropped as a dependency. Nothing is fetched at runtime, so hosts no longer need android.permission.INTERNET or com.apple.security.network.client, and there is no fallback face on the first frame. Google Sans ships as a Latin subset; the scripts it leaves out fall back to the platform face, as CJK already did.
+- Makes `FlowTypography.standard` and `FlowTheme.typography` `const` again, and `FlowTypography.code` / `codeInline` plain fields with const defaults.
+- Deprecates `FlowTypography.recut` in favour of `copyWith(fontWeight:, fontStyle:)` — the bundled families declare every cut, so the engine resolves it from the weight on the style. Removed in 0.6.0.
 - Adds FlowTool, the tool-call card: one mark morphs with the call's status (a still asterisk while staged, turning while it runs, a check or an error glyph once settled), the host's title and primary argument sit on the row, and the input and output render as code blocks behind a disclosure, with a failure readable without a tap. FlowToolPart renders it in a thread, keyed by the provider's call id and copying through FlowThread.onCodeCopy; FlowToolStyle joins the component styles with a FlowTheme.toolStyle default. Metrics are provisional pending a design frame.
 
 ## 0.3.0
