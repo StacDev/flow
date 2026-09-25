@@ -98,7 +98,7 @@ Status legend: ⬜ Todo · ✅ Done
 | 9 | Thread List | host-labeled sections; unread dot, pinned glyph, leading icon slot; single selection by id | ✅ |
 | 10 | Message actions | | ✅ |
 | 11 | Streaming text | | ✅ |
-| 12 | Message composer | | ✅ |
+| 12 | Message composer | full card; compact single-row pill that opens into the card as the draft grows; expands to fill a fixed height | ✅ |
 | 13 | Model selector | effort & overflow submenus; sheet on phones | ✅ |
 | 14 | Menu | icon-trigger menu: groups, submenus, toggles; sheet on phones | ✅ |
 | 15 | Attachments | images and files, type pill; built-in picker and web file drop; videos pending | ✅ |

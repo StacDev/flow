@@ -19,6 +19,8 @@ class FlowStrings {
   String get edit => 'Edit';
   String get jumpToLatest => 'Jump to latest';
   String get attach => 'Attach';
+  String get send => 'Send';
+  String get stop => 'Stop';
   String get dropFiles => 'Drop files to attach';
   String get removeAttachment => 'Remove';
   String get approvalTitle => 'Approval required';

@@ -36,6 +36,7 @@ class StacFlowChatView extends StatefulWidget {
     this.maxContentWidth = 760,
     this.style,
     this.composerStyle,
+    this.composerLayout = FlowComposerLayout.expanded,
   });
 
   /// The chat this screen shows and drives.
@@ -81,6 +82,7 @@ class StacFlowChatView extends StatefulWidget {
   final double maxContentWidth;
   final FlowChatViewStyle? style;
   final FlowComposerStyle? composerStyle;
+  final FlowComposerLayout composerLayout;
 
   @override
   State<StacFlowChatView> createState() => _StacFlowChatViewState();
@@ -273,9 +275,12 @@ class _StacFlowChatViewState extends State<StacFlowChatView> {
         dropLabel: strings.dropFiles,
         style: widget.style,
         composer: FlowComposer(
+          layout: widget.composerLayout,
           isStreaming: state.isGenerating,
           onSend: _send,
           onStop: _chat.stop,
+          sendTooltip: strings.send,
+          stopTooltip: strings.stop,
           controller: _text,
           placeholder: strings.placeholder,
           attachments: state.pendingAttachments,

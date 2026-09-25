@@ -70,6 +70,8 @@ List<(String, String)> variantsFor(PlaygroundItem item) {
   return switch (item) {
     PlaygroundItem.composer => const [
       ('default', 'Default'),
+      ('compact', 'Compact'),
+      ('fixed', 'Fixed height'),
       ('streaming', 'Streaming'),
     ],
     PlaygroundItem.message => const [
