@@ -476,8 +476,13 @@ class _FlowComposerState extends State<FlowComposer> {
     super.initState();
     _attachedFocusNode = _focusNode..addListener(_handleFocusChange);
     _attachedController = _controller..addListener(_syncPromotion);
-    _promoted = _wantsPromotion(context);
     _registerPaste();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _promoted = _wantsPromotion(context);
   }
 
   @override
