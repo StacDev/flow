@@ -499,6 +499,8 @@ class _ChatScreenState extends State<ChatScreen> {
           isStreaming: _generating,
           onSend: _send,
           onStop: _stop,
+          sendTooltip: 'Send',
+          stopTooltip: 'Stop',
           // Picking goes through the "+" menu below; paste and drop land
           // in the same place — three ways in, one handler.
           onAttachmentsPasted: _addAttachments,

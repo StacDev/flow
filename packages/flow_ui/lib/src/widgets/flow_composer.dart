@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/rendering.dart' show RenderProxyBox;
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -17,6 +18,8 @@ import '../utils/flow_selection.dart';
 import 'flow_attachment_group.dart';
 import 'flow_drop_target.dart';
 import 'flow_pill.dart';
+
+enum FlowComposerLayout { expanded, compact }
 
 /// The message input area: an auto-growing text field with an action bar
 /// and a send button that morphs into stop while [isStreaming].
@@ -82,6 +85,16 @@ import 'flow_pill.dart';
 /// Once something is pending, an empty field is no longer nothing to
 /// send: [onSend] fires with an empty string, because a picture with no
 /// caption is a message.
+///
+/// ## Compact
+///
+/// [layout] set to [FlowComposerLayout.compact] folds the card into one
+/// row: the attach button and [leadingActions], the field, then
+/// [trailingActions] and send, with no action bar beneath. Pending
+/// [attachments] sit in a strip above that row, the field still inline.
+/// It opens into the full card on its own once the draft wraps past one
+/// line, and folds back when the draft is empty. The field keeps its focus
+/// and draft through both.
 class FlowComposer extends StatefulWidget {
   const FlowComposer({
     super.key,
@@ -95,6 +108,8 @@ class FlowComposer extends StatefulWidget {
     this.clearOnSend = true,
     this.submitOnEnter = true,
     this.maxLines = 6,
+    this.layout = FlowComposerLayout.expanded,
+    this.expands = false,
     this.attachments = const [],
     this.onRemoveAttachment,
     this.onAttachmentTap,
@@ -108,6 +123,8 @@ class FlowComposer extends StatefulWidget {
     this.onAttachmentRejected,
     this.attachmentsEnabled = true,
     this.attachTooltip,
+    this.sendTooltip,
+    this.stopTooltip,
     this.onContentInserted,
     this.errorMessage,
     this.errorIcon,
@@ -124,6 +141,12 @@ class FlowComposer extends StatefulWidget {
          'Pass onAttach or onAttachmentsPicked, not both: there is one '
          'attach button and it can only have one owner. onAttach means the '
          'host picks; onAttachmentsPicked means the package does.',
+       ),
+       assert(
+         !expands || layout == FlowComposerLayout.expanded,
+         'expands fills a fixed height with the full card, and the compact '
+         'layout is a single row. Pass layout: FlowComposerLayout.expanded '
+         'with expands: true.',
        );
 
   /// Called with the trimmed text — empty only when [attachments] is not,
@@ -157,6 +180,10 @@ class FlowComposer extends StatefulWidget {
 
   /// Auto-grow cap; the field scrolls beyond it.
   final int maxLines;
+
+  final FlowComposerLayout layout;
+
+  final bool expands;
 
   /// Pending attachments, shown above the input. Empty renders nothing.
   final List<FlowAttachment> attachments;
@@ -277,6 +304,10 @@ class FlowComposer extends StatefulWidget {
   /// name.
   final String? attachTooltip;
 
+  final String? sendTooltip;
+
+  final String? stopTooltip;
+
   /// Raises the error banner: the design's tab above the card, in the
   /// error wash with a warning glyph and this line. Null draws nothing.
   ///
@@ -350,7 +381,7 @@ class _FlowComposerState extends State<FlowComposer> {
   static const double _contentInset = 18;
   static const double _actionInset = 10;
   static const double _attachmentGap = 12;
-  static const double _fieldGap = 16;
+  static const double _fieldGap = 12;
   static const double _leadingGap = 4;
   static const double _trailingGap = 8;
 
@@ -358,10 +389,6 @@ class _FlowComposerState extends State<FlowComposer> {
   /// closing to 6 on phones.
   static const double _pillGap = 8;
   static const double _mobilePillGap = 6;
-
-  /// The field's floor, sized so an empty composer stands at the design's
-  /// 116px: 19 + 38 + 16 (gap) + 32 (action row) + 11.
-  static const double _fieldMinHeight = 38;
 
   /// The design's outline: a 1px hairline over the ink, sweeping from the
   /// top-left toward the bottom-right where it thins — 14% → 8% at rest,
@@ -414,6 +441,15 @@ class _FlowComposerState extends State<FlowComposer> {
   static const double _errorTextHeight = 1.3;
   static const Duration _errorReveal = Duration(milliseconds: 150);
 
+  static const EdgeInsetsGeometry _compactCardPadding = EdgeInsets.symmetric(
+    horizontal: 1,
+    vertical: 9,
+  );
+  static const double _compactInset = 8;
+  static const double _compactFieldInset = 10;
+  static const double _cursorWidth = 2;
+  static const double _caretGap = 1;
+
   TextEditingController? _internalController;
   FocusNode? _internalFocusNode;
   late FocusNode _attachedFocusNode;
@@ -424,6 +460,10 @@ class _FlowComposerState extends State<FlowComposer> {
   bool _dropHover = false;
   bool _disposed = false;
   FlowPasteRegistration? _pasteRegistration;
+  late TextEditingController _attachedController;
+  final GlobalKey _fieldKey = GlobalKey();
+  bool _promoted = false;
+  double? _fieldWidth;
 
   TextEditingController get _controller =>
       widget.controller ?? (_internalController ??= TextEditingController());
@@ -435,7 +475,14 @@ class _FlowComposerState extends State<FlowComposer> {
   void initState() {
     super.initState();
     _attachedFocusNode = _focusNode..addListener(_handleFocusChange);
+    _attachedController = _controller..addListener(_syncPromotion);
     _registerPaste();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _promoted = _wantsPromotion(context);
   }
 
   @override
@@ -446,6 +493,11 @@ class _FlowComposerState extends State<FlowComposer> {
       _attachedFocusNode = _focusNode..addListener(_handleFocusChange);
       _handleFocusChange();
     }
+    if (_controller != _attachedController) {
+      _attachedController.removeListener(_syncPromotion);
+      _attachedController = _controller..addListener(_syncPromotion);
+    }
+    _promoted = _wantsPromotion(context);
     if ((widget.onAttachmentsPasted == null) !=
         (oldWidget.onAttachmentsPasted == null)) {
       _registerPaste();
@@ -457,6 +509,7 @@ class _FlowComposerState extends State<FlowComposer> {
     _disposed = true;
     _pasteRegistration?.dispose();
     _attachedFocusNode.removeListener(_handleFocusChange);
+    _attachedController.removeListener(_syncPromotion);
     _internalController?.dispose();
     _internalFocusNode?.dispose();
     super.dispose();
@@ -524,9 +577,60 @@ class _FlowComposerState extends State<FlowComposer> {
     }
   }
 
+  bool _wantsPromotion(BuildContext context) {
+    if (widget.layout == FlowComposerLayout.expanded) return false;
+    final text = _controller.text;
+    if (text.isEmpty) return false;
+    if (_promoted || text.contains('\n')) return true;
+    final width = _fieldWidth;
+    return width != null && _wraps(context, text, width);
+  }
+
+  bool _wraps(BuildContext context, String text, double width) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: _measuredStyle(context)),
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      locale: Localizations.maybeLocaleOf(context),
+    )..layout(maxWidth: math.max(0.0, width - _caretGap - _cursorWidth));
+    final wraps = painter.didExceedMaxLines;
+    painter.dispose();
+    return wraps;
+  }
+
+  void _syncPromotion() {
+    if (!mounted) return;
+    final promoted = _wantsPromotion(context);
+    if (promoted != _promoted) setState(() => _promoted = promoted);
+  }
+
+  void _handleFieldWidth(double width) {
+    if (!mounted) return;
+    _fieldWidth = width;
+    _syncPromotion();
+  }
+
   /// The effective style: the widget's over the theme's, tokens beneath.
   FlowComposerStyle? _styleOf(BuildContext context) =>
       context.flowTheme.composerStyle?.merge(widget.style) ?? widget.style;
+
+  TextStyle _fieldStyle(BuildContext context) => context
+      .flowTypography
+      .bodyLarge
+      .copyWith(height: 1.3, color: context.flowColors.onSurface)
+      .merge(_styleOf(context)?.textStyle);
+
+  TextStyle _measuredStyle(BuildContext context) {
+    final theme = Theme.of(context);
+    final base = theme.useMaterial3
+        ? theme.textTheme.bodyLarge
+        : theme.textTheme.titleMedium;
+    final style = (base ?? const TextStyle()).merge(_fieldStyle(context));
+    return MediaQuery.boldTextOf(context)
+        ? style.merge(const TextStyle(fontWeight: FontWeight.bold))
+        : style;
+  }
 
   /// The theme's platform rather than the real one, like the menus' sheet
   /// resolution, so hosts and tests can steer it without a device.
@@ -580,19 +684,18 @@ class _FlowComposerState extends State<FlowComposer> {
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (!widget.submitOnEnter || widget.isStreaming) {
-      return KeyEventResult.ignored;
-    }
     final isEnter =
         event.logicalKey == LogicalKeyboardKey.enter ||
         event.logicalKey == LogicalKeyboardKey.numpadEnter;
-    if (event is KeyDownEvent &&
-        isEnter &&
-        !HardwareKeyboard.instance.isShiftPressed) {
-      _send();
-      return KeyEventResult.handled;
+    if (!widget.submitOnEnter ||
+        !isEnter ||
+        event is KeyUpEvent ||
+        HardwareKeyboard.instance.isShiftPressed ||
+        _controller.value.isComposingRangeValid) {
+      return KeyEventResult.ignored;
     }
-    return KeyEventResult.ignored;
+    if (event is KeyDownEvent && !widget.isStreaming) _send();
+    return KeyEventResult.handled;
   }
 
   /// The design's button anatomy: the disc floats inside a gap of the
@@ -680,15 +783,19 @@ class _FlowComposerState extends State<FlowComposer> {
     final discColor = style?.sendBackgroundColor ?? colors.primary;
     final glyphColor = style?.sendForegroundColor ?? colors.onPrimary;
     if (widget.isStreaming) {
-      return _ringed(
-        context,
-        active: true,
-        disc: FlowCircleButton(
-          icon: Icons.stop_rounded,
-          background: discColor,
-          foreground: glyphColor,
-          padding: _stopPadding,
-          onTap: widget.onStop,
+      return _buttonSemantics(
+        label: widget.stopTooltip,
+        enabled: widget.onStop != null,
+        child: _ringed(
+          context,
+          active: true,
+          disc: FlowCircleButton(
+            icon: Icons.stop_rounded,
+            background: discColor,
+            foreground: glyphColor,
+            padding: _stopPadding,
+            onTap: widget.onStop,
+          ),
         ),
       );
     }
@@ -696,28 +803,48 @@ class _FlowComposerState extends State<FlowComposer> {
       valueListenable: _controller,
       builder: (context, value, _) {
         final canSend = _canSend(value.text.trim());
-        return _ringed(
-          context,
-          active: canSend,
-          disc: Material(
-            // Disabled keeps the arrow's ink and only drains the disc:
-            // primary gives way to the 30% disabled wash.
-            color: canSend ? discColor : colors.onSurfaceDisabled,
-            shape: const CircleBorder(),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: canSend ? _send : null,
-              customBorder: const CircleBorder(),
-              child: CustomPaint(
-                // The design's arrow is a thin stroke, not the chunky
-                // Material glyph.
-                painter: _ArrowUpPainter(color: glyphColor),
+        return _buttonSemantics(
+          label: widget.sendTooltip,
+          enabled: canSend,
+          child: _ringed(
+            context,
+            active: canSend,
+            disc: Material(
+              // Disabled keeps the arrow's ink and only drains the disc:
+              // primary gives way to the 30% disabled wash.
+              color: canSend ? discColor : colors.onSurfaceDisabled,
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: canSend ? _send : null,
+                customBorder: const CircleBorder(),
+                child: CustomPaint(
+                  // The design's arrow is a thin stroke, not the chunky
+                  // Material glyph.
+                  painter: _ArrowUpPainter(color: glyphColor),
+                ),
               ),
             ),
           ),
         );
       },
     );
+  }
+
+  Widget _buttonSemantics({
+    required String? label,
+    required bool enabled,
+    required Widget child,
+  }) {
+    final button = Semantics(
+      container: true,
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: child,
+    );
+    if (label == null) return button;
+    return Tooltip(message: label, excludeFromSemantics: true, child: button);
   }
 
   /// The error banner: a tab in the error wash with matching hairline,
@@ -828,7 +955,10 @@ class _FlowComposerState extends State<FlowComposer> {
               ? const SizedBox.shrink()
               : _buildErrorBanner(context, errorMessage),
         ),
-        _buildCard(context),
+        if (widget.expands)
+          Expanded(child: _buildCard(context))
+        else
+          _buildCard(context),
       ],
     );
   }
@@ -837,11 +967,11 @@ class _FlowComposerState extends State<FlowComposer> {
   /// the composer's drop target.
   Widget _buildCard(BuildContext context) {
     final colors = context.flowColors;
-    final typography = context.flowTypography;
 
     final active = widget.enabled && (_focused || _hovered);
     final radius = widget.borderRadius ?? _cardRadius;
     final style = _styleOf(context);
+    final expanded = widget.layout == FlowComposerLayout.expanded || _promoted;
     // A style's outline flattens the default gradient to one solid color
     // in every state, like the menu card's border override does.
     final outline = style?.outlineColor;
@@ -933,143 +1063,177 @@ class _FlowComposerState extends State<FlowComposer> {
                     BoxShadow(color: colors.shadow, blurRadius: _shadowBlur),
                   ],
                 ),
-                padding: widget.padding ?? _cardPadding,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (widget.attachments.isNotEmpty) ...[
-                      // The inset rides inside the strip's scroll view rather
-                      // than around it: at rest nothing moves, but once the
-                      // strip overflows the tiles scroll under the gutter and
-                      // the last one is cut at the card's edge — the cue that
-                      // there is more, with no counter to draw.
-                      FlowAttachmentGroup(
-                        attachments: widget.attachments,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: _contentInset,
-                        ),
-                        onTap: widget.onAttachmentTap,
-                        // Editing is what `enabled` gates; viewing an attachment
-                        // that is already pending stays available, as does the
-                        // send button while streaming.
-                        onRemove: widget.enabled
-                            ? widget.onRemoveAttachment
-                            : null,
-                        removeTooltip: widget.removeAttachmentTooltip,
-                        previewCloseTooltip: widget.previewCloseTooltip,
-                      ),
-                      const SizedBox(height: _attachmentGap),
-                    ],
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: _contentInset,
-                      ),
-                      child: Container(
-                        constraints: const BoxConstraints(
-                          minHeight: _fieldMinHeight,
-                        ),
-                        alignment: AlignmentDirectional.topStart,
-                        child: Focus(
-                          onKeyEvent: _handleKeyEvent,
-                          // The caret and the highlight in the theme's
-                          // selection colours, matching the thread's; a
-                          // host's own textSelectionTheme still wins.
-                          child: TextSelectionTheme(
-                            data: flowTextSelectionTheme(context),
-                            child: TextField(
-                              controller: _controller,
-                              focusNode: _focusNode,
-                              enabled: widget.enabled,
-                              minLines: 1,
-                              maxLines: widget.maxLines,
-                              // The design's compressed composer: body face on
-                              // the 1.3 control line, so the empty card stands
-                              // at 116.
-                              style: typography.bodyLarge
-                                  .copyWith(
-                                    height: 1.3,
-                                    color: colors.onSurface,
-                                  )
-                                  .merge(style?.textStyle),
-                              // Android's IME rich-content path, the one media
-                              // input the SDK covers without a plugin.
-                              contentInsertionConfiguration:
-                                  widget.onContentInserted == null ||
-                                      !widget.attachmentsEnabled
-                                  ? null
-                                  : ContentInsertionConfiguration(
-                                      onContentInserted:
-                                          widget.onContentInserted!,
-                                    ),
-                              decoration: InputDecoration(
-                                isDense: true,
-                                border: InputBorder.none,
-                                hintText: widget.placeholder,
-                                hintStyle: typography.bodyLarge.copyWith(
-                                  height: 1.3,
-                                  color:
-                                      style?.hintColor ?? colors.onSurfaceMuted,
-                                ),
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: _fieldGap),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: _actionInset,
-                      ),
-                      child: Row(
-                        children: [
-                          // The built-in attach affordance leads the row; being
-                          // outside the loop keeps the pill-pair gap logic
-                          // reading only the host's actions.
-                          if (widget.attachmentsEnabled &&
-                              (widget.onAttach != null ||
-                                  widget.onAttachmentsPicked != null)) ...[
-                            _buildAttachButton(context),
-                            const SizedBox(width: _leadingGap),
-                          ],
-                          for (
-                            var i = 0;
-                            i < widget.leadingActions.length;
-                            i++
-                          ) ...[
-                            widget.leadingActions[i],
-                            // Two neighbouring pills read as a set and take the
-                            // design's wider step — 8, closing to 6 on phones —
-                            // while everything else keeps the action row's 4.
-                            SizedBox(
-                              width:
-                                  i + 1 < widget.leadingActions.length &&
-                                      widget.leadingActions[i] is FlowPill &&
-                                      widget.leadingActions[i + 1] is FlowPill
-                                  ? (_isMobile(context)
-                                        ? _mobilePillGap
-                                        : _pillGap)
-                                  : _leadingGap,
-                            ),
-                          ],
-                          const Spacer(),
-                          for (final action in widget.trailingActions) ...[
-                            action,
-                            const SizedBox(width: _trailingGap),
-                          ],
-                          _buildSendStopButton(context),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                padding:
+                    widget.padding ??
+                    (expanded ? _cardPadding : _compactCardPadding),
+                child: expanded
+                    ? _buildExpandedBody(context)
+                    : _buildCompactBody(context),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildField(BuildContext context, {required bool compact}) {
+    final colors = context.flowColors;
+    final typography = context.flowTypography;
+    final style = _styleOf(context);
+    return Focus(
+      key: _fieldKey,
+      onKeyEvent: _handleKeyEvent,
+      // The caret and the highlight in the theme's selection colours,
+      // matching the thread's; a host's own textSelectionTheme still wins.
+      child: TextSelectionTheme(
+        data: flowTextSelectionTheme(context),
+        child: TextField(
+          controller: _controller,
+          focusNode: _focusNode,
+          enabled: widget.enabled,
+          minLines: widget.expands ? null : 1,
+          maxLines: widget.expands ? null : widget.maxLines,
+          expands: widget.expands,
+          cursorWidth: _cursorWidth,
+          // The design's compressed composer: body face on the 1.3 control
+          // line.
+          style: _fieldStyle(context),
+          // Android's IME rich-content path, the one media input the SDK
+          // covers without a plugin.
+          contentInsertionConfiguration:
+              widget.onContentInserted == null || !widget.attachmentsEnabled
+              ? null
+              : ContentInsertionConfiguration(
+                  onContentInserted: widget.onContentInserted!,
+                ),
+          decoration: InputDecoration(
+            isDense: true,
+            border: InputBorder.none,
+            hintText: widget.placeholder,
+            hintMaxLines: compact ? 1 : null,
+            hintStyle: typography.bodyLarge.copyWith(
+              height: 1.3,
+              color: style?.hintColor ?? colors.onSurfaceMuted,
+            ),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _leadingChildren(BuildContext context) => [
+    // The built-in attach affordance leads the row; being outside the loop
+    // keeps the pill-pair gap logic reading only the host's actions.
+    if (widget.attachmentsEnabled &&
+        (widget.onAttach != null || widget.onAttachmentsPicked != null)) ...[
+      _buildAttachButton(context),
+      const SizedBox(width: _leadingGap),
+    ],
+    for (var i = 0; i < widget.leadingActions.length; i++) ...[
+      widget.leadingActions[i],
+      // Two neighbouring pills read as a set and take the design's wider
+      // step — 8, closing to 6 on phones — while everything else keeps the
+      // action row's 4.
+      SizedBox(
+        width:
+            i + 1 < widget.leadingActions.length &&
+                widget.leadingActions[i] is FlowPill &&
+                widget.leadingActions[i + 1] is FlowPill
+            ? (_isMobile(context) ? _mobilePillGap : _pillGap)
+            : _leadingGap,
+      ),
+    ],
+  ];
+
+  List<Widget> _trailingChildren(BuildContext context) => [
+    for (final action in widget.trailingActions) ...[
+      action,
+      const SizedBox(width: _trailingGap),
+    ],
+    _buildSendStopButton(context),
+  ];
+
+  Widget _buildExpandedBody(BuildContext context) {
+    final field = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: _contentInset),
+      child: _buildField(context, compact: false),
+    );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.attachments.isNotEmpty) ...[
+          _buildAttachmentStrip(context, _contentInset),
+          const SizedBox(height: _attachmentGap),
+        ],
+        if (widget.expands) Expanded(child: field) else field,
+        const SizedBox(height: _fieldGap),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _actionInset),
+          child: Row(
+            children: [
+              ..._leadingChildren(context),
+              const Spacer(),
+              ..._trailingChildren(context),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAttachmentStrip(BuildContext context, double inset) {
+    // The inset rides inside the strip's scroll view rather than around it:
+    // at rest nothing moves, but once the strip overflows the tiles scroll
+    // under the gutter and the last one is cut at the card's edge — the cue
+    // that there is more, with no counter to draw.
+    return FlowAttachmentGroup(
+      attachments: widget.attachments,
+      padding: EdgeInsets.symmetric(horizontal: inset),
+      onTap: widget.onAttachmentTap,
+      // Editing is what `enabled` gates; viewing an attachment that is
+      // already pending stays available, as does the send button while
+      // streaming.
+      onRemove: widget.enabled ? widget.onRemoveAttachment : null,
+      removeTooltip: widget.removeAttachmentTooltip,
+      previewCloseTooltip: widget.previewCloseTooltip,
+    );
+  }
+
+  Widget _buildCompactBody(BuildContext context) {
+    final leading = _leadingChildren(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.attachments.isNotEmpty) ...[
+          _buildAttachmentStrip(context, _compactInset),
+          const SizedBox(height: _attachmentGap),
+        ],
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _compactInset),
+          child: Row(
+            children: [
+              ...leading,
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsetsDirectional.only(
+                    start: leading.isEmpty ? _compactFieldInset : 0,
+                    end: _trailingGap,
+                  ),
+                  child: _ReportWidth(
+                    onWidth: _handleFieldWidth,
+                    child: _buildField(context, compact: true),
+                  ),
+                ),
+              ),
+              ..._trailingChildren(context),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1158,4 +1322,38 @@ class _WarningDiamondPainter extends CustomPainter {
   @override
   bool shouldRepaint(_WarningDiamondPainter oldDelegate) =>
       oldDelegate.color != color;
+}
+
+class _ReportWidth extends SingleChildRenderObjectWidget {
+  const _ReportWidth({required this.onWidth, required super.child});
+
+  final ValueChanged<double> onWidth;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderReportWidth(onWidth);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderReportWidth renderObject,
+  ) {
+    renderObject.onWidth = onWidth;
+  }
+}
+
+class _RenderReportWidth extends RenderProxyBox {
+  _RenderReportWidth(this.onWidth);
+
+  ValueChanged<double> onWidth;
+  double? _reported;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    final width = size.width;
+    if (width == _reported) return;
+    _reported = width;
+    WidgetsBinding.instance.addPostFrameCallback((_) => onWidth(width));
+  }
 }

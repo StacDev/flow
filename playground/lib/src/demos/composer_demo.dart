@@ -7,9 +7,83 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'demo_content.dart';
 
 String composerSnippet([String? variant]) => switch (variant) {
+  'compact' => _compact,
+  'fixed' => _fixed,
   'streaming' => _streaming,
   _ => _default,
 };
+
+const String _compact = '''
+// One row: the "+" menu, the field, the model selector and send, with no
+// action row beneath; attachments sit in a strip above it. It opens into
+// the full card by itself once the draft wraps past one line, and folds
+// back when the draft is empty.
+FlowComposer(
+  layout: FlowComposerLayout.compact,
+  controller: input,
+  placeholder: 'How can I help you today?',
+  isStreaming: generating,
+  onSend: send,
+  onStop: stop,
+  attachments: pending,
+  onRemoveAttachment: removePending,
+  leadingActions: [
+    FlowMenu(
+      icon: PhosphorIconsRegular.plus,
+      sheetTitle: 'Add to Chat',
+      entries: [
+        FlowMenuOption(id: 'files', label: 'Add Files or Photos'),
+        ...,
+      ],
+      onSelected: (id) => id == 'files' ? pickFiles() : toggleTool(id),
+    ),
+  ],
+  trailingActions: [
+    FlowModelSelector(
+      models: models,
+      selectedId: modelId,
+      onSelected: setModel,
+      efforts: efforts,
+      selectedEffortId: effortId,
+      onEffortSelected: setEffort,
+    ),
+  ],
+)''';
+
+const String _fixed = '''
+// expands makes the card fill the height its parent gives it: the field
+// takes the space above the action row and scrolls inside it.
+SizedBox(
+  height: 240,
+  child: FlowComposer(
+    expands: true,
+    controller: input,
+    placeholder: 'How can I help you today?',
+    isStreaming: generating,
+    onSend: send,
+    onStop: stop,
+    attachments: pending,
+    onRemoveAttachment: removePending,
+    leadingActions: [
+      FlowMenu(
+        icon: PhosphorIconsRegular.plus,
+        sheetTitle: 'Add to Chat',
+        entries: [
+          FlowMenuOption(id: 'files', label: 'Add Files or Photos'),
+          ...,
+        ],
+        onSelected: (id) => id == 'files' ? pickFiles() : toggleTool(id),
+      ),
+    ],
+    trailingActions: [
+      FlowModelSelector(
+        models: models,
+        selectedId: modelId,
+        onSelected: setModel,
+      ),
+    ],
+  ),
+)''';
 
 const String _streaming = '''
 // While a reply streams the send disc reads as stop — onStop is the
@@ -19,6 +93,7 @@ FlowComposer(
   isStreaming: true,
   onSend: send,
   onStop: stop,
+  stopTooltip: 'Stop',
 )''';
 
 const String _default = '''
@@ -28,6 +103,8 @@ FlowComposer(
   isStreaming: generating,
   onSend: send,
   onStop: stop,
+  sendTooltip: 'Send',
+  stopTooltip: 'Stop',
   // Drag-and-drop scoped to the card, which lights up while a file is
   // over it. FlowChatView.onAttachmentsDropped is the same thing over
   // the whole surface; wire either, or both — the innermost wins.
@@ -139,15 +216,21 @@ class _ComposerDemoState extends State<ComposerDemo> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    final stage = Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
         child: FlowComposer(
+          layout: widget.variant == 'compact'
+              ? FlowComposerLayout.compact
+              : FlowComposerLayout.expanded,
+          expands: widget.variant == 'fixed',
           controller: _input,
           placeholder: 'How can I help you today?',
           isStreaming: widget.variant == 'streaming',
           onSend: (_) {},
           onStop: () {},
+          sendTooltip: 'Send',
+          stopTooltip: 'Stop',
           // Drop scoped to the card: drag an image anywhere else on the
           // stage and nothing happens — over the composer it lights up.
           onAttachmentsDropped: _add,
@@ -205,5 +288,8 @@ class _ComposerDemoState extends State<ComposerDemo> {
         ),
       ),
     );
+    return widget.variant == 'fixed'
+        ? SizedBox(height: 240, child: stage)
+        : stage;
   }
 }
