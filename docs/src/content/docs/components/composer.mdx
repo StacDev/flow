@@ -13,10 +13,12 @@ the draft, a send button that becomes **stop** while the model is
 generating, and slots for host actions on the design's rail. `onSend` is
 required — a composer needs somewhere to send to. The card sits on
 `surfaceBright` behind a gradient hairline that firms on hover and focus,
-standing at the design's 116px with an empty draft — which also drains the
-send disc to the disabled ink. The whole card is the field's click target:
+its field a single line with an empty draft — which also drains the send
+disc to the disabled ink. The whole card is the field's click target:
 a click anywhere on it that is not a control focuses the field, and the
-pointer reads as a text cursor over all of it.
+pointer reads as a text cursor over all of it. For simpler flows there is
+also a [compact](#compact) layout: a single-row pill that opens into this
+card as the draft grows.
 
 ## Composed
 
@@ -63,11 +65,81 @@ FlowComposer(
 )
 ```
 
+## Compact
+
+`layout: FlowComposerLayout.compact` folds the card into a single row: the
+attach button and `leadingActions` on the left, the field in the middle,
+`trailingActions` and send on the right, and no action row beneath. Only
+what you wire is drawn, so the bare form is a field and a send button in a
+50px pill.
+
+<FlowDemo demo="composer" variant="compact" height={300} title="The compact composer" />
+
+```dart title="The same composer, one row"
+FlowComposer(
+  layout: FlowComposerLayout.compact,
+  onSend: send,
+  onAttachmentsPicked: (picked) => setState(() => pending.addAll(picked)),
+  attachTooltip: 'Attach files',
+  attachments: pending,
+  onRemoveAttachment: removePending,
+)
+```
+
+Attachments don't change the layout: the pending strip sits above the row
+inside the card, and the field stays inline with the controls. The pill
+opens into the full card by itself only when the draft needs the room, once
+it wraps past one line from a long line or an explicit newline. It folds
+back when the draft is empty, which is what a send leaves behind with
+`clearOnSend`, so deleting back to one line never moves the controls out
+from under the caret. The field keeps its focus and its draft through both.
+
+`layout` is the form the composer takes with an empty draft. To open the
+card by hand, from a button of your own, flip it to
+`FlowComposerLayout.expanded`.
+
+<Aside type="tip" title="Mind the row on phones">
+Everything in a compact composer shares one row, so keep inline actions to
+icons on narrow screens. `FlowPill` already drops its label on phones; the
+model selector's label is the one to watch.
+</Aside>
+
+## Fixed height
+
+The card normally hugs its draft: one line when empty, growing to
+`maxLines`. For a composer at a fixed height, set `expands: true` and size
+it from the parent. The card fills the height it is given, and the field
+takes the space above the action row and scrolls inside it, so `maxLines`
+no longer applies.
+
+<FlowDemo demo="composer" variant="fixed" height={340} title="A composer at a fixed height" />
+
+```dart title="Filling a 240px box"
+SizedBox(
+  height: 240,
+  child: FlowComposer(
+    expands: true,
+    onSend: send,
+  ),
+)
+```
+
+Like `TextField.expands`, it needs a bounded height from its parent, so
+inside a `Column` wrap it in `Expanded`. It works with the full card only:
+the compact layout is a single row, and combining the two asserts.
+`FlowChatView` docks its composer at its natural height, so `expands` is
+for a composer you place and size yourself.
+
 ## Send and stop
 
 `isStreaming` drives the send button: `false` shows send, `true` swaps it
 for stop and routes taps to `onStop`. Flip it from your generation state
 and the composer stays honest about what a tap will do.
+
+Name the two buttons with `sendTooltip` and `stopTooltip`. flow_ui ships
+no copy, so the words are yours: they show on hover and are what a screen
+reader announces, and both buttons read as buttons with their enabled
+state.
 
 <FlowDemo demo="composer" variant="streaming" height={300} title="The stop state" />
 
@@ -75,11 +147,15 @@ and the composer stays honest about what a tap will do.
 
 On hardware keyboards **Enter sends** and **Shift+Enter** inserts a
 newline — `submitOnEnter: false` opts out; mobile soft keyboards keep
-their newline key and send from the button. The field grows with the draft
+their newline key and send from the button. While an input method is
+composing, Enter confirms the composition instead of sending, and while a
+reply streams it does nothing rather than adding a newline. The field grows with the draft
 to `maxLines` (6) and scrolls beyond it, and `clearOnSend` empties it
 after a successful send. `onSend` receives the trimmed text, and fires
 empty only when something is attached — a picture with no caption is
-still a message.
+still a message. In the [compact](#compact) layout the field holds a
+single line, and the pill opens into the full card the moment the draft
+wraps.
 
 ## Attach
 
@@ -345,9 +421,16 @@ wins field by field.
 ## Key API
 
 - `onSend` — required; receives the trimmed draft, never empty text.
-- `isStreaming` + `onStop` — the send/stop swap.
+- `isStreaming` + `onStop` — the send/stop swap; `sendTooltip` and
+  `stopTooltip` name the two buttons.
 - `enabled`, `submitOnEnter`, `clearOnSend`, `maxLines` — field behavior;
   all default on, with a 6-line growth cap.
+- `layout` — `FlowComposerLayout.expanded`, the card and the default, or
+  `FlowComposerLayout.compact`, the single-row pill that opens into the
+  card as the draft grows and folds back once it is empty.
+- `expands` — fills the height the parent gives the card, the field taking
+  the space above the action row and scrolling inside it; needs a bounded
+  height and the full card.
 - `leadingActions` / `trailingActions` — widget slots on the input rail;
   any widget works, the flow_ui menus just fit the design out of the box.
 - `attachments`, `onRemoveAttachment`, `removeAttachmentTooltip` — the

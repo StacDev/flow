@@ -4,6 +4,12 @@
 - Makes `FlowTypography.standard` and `FlowTheme.typography` `const` again, and `FlowTypography.code` / `codeInline` plain fields with const defaults.
 - Deprecates `FlowTypography.recut` in favour of `copyWith(fontWeight:, fontStyle:)` — the bundled families declare every cut, so the engine resolves it from the weight on the style. Removed in 0.6.0.
 - Adds FlowTool, the tool-call card: one mark morphs with the call's status (a still asterisk while staged, turning while it runs, a check or an error glyph once settled), the host's title and primary argument sit on the row, and the input and output render as code blocks behind a disclosure, with a failure readable without a tap. FlowToolPart renders it in a thread, keyed by the provider's call id and copying through FlowThread.onCodeCopy; FlowToolStyle joins the component styles with a FlowTheme.toolStyle default. Metrics are provisional pending a design frame.
+- Adds a compact layout to FlowComposer: `layout: FlowComposerLayout.compact` folds the card into a single-row pill, with the attach button, `leadingActions`, the field, `trailingActions` and send inline, no action row, and nothing drawn for what is not wired. Pending attachments sit in a strip above the row, the field still inline. It opens into the full card by itself once the draft wraps past one line, and folds back when the draft is empty, keeping the field's focus and draft through both. `FlowComposerLayout.expanded`, the default, is unchanged. Metrics are provisional pending a design frame.
+- Tightens the full FlowComposer card: the field no longer keeps a 38px floor under a one-line draft, and the gap above the action row drops from 16 to 12, so an empty card stands at about 95px instead of 116.
+- Adds FlowComposer.expands for a composer at a fixed height: the card fills the height its parent gives it, and the field takes the space above the action row and scrolls inside it. Like TextField.expands it needs a bounded height, and it works with the full card only.
+- Adds FlowComposer.sendTooltip and stopTooltip, host-localized names for the send and stop buttons. Both now read as buttons with their enabled state, so a disabled send button no longer drops out of the accessibility tree.
+- Fixes Enter sending the draft while an input method is still composing: Enter now confirms the composition, as in any text field.
+- Enter no longer adds a newline while a reply streams, or when held down after a send; Shift+Enter still inserts one.
 
 ## 0.3.0
 

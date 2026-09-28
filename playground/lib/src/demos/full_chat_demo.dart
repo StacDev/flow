@@ -205,6 +205,8 @@ class _FullChatDemoState extends State<FullChatDemo> {
         isStreaming: _generating,
         onSend: _send,
         onStop: _stop,
+        sendTooltip: 'Send',
+        stopTooltip: 'Stop',
         // Picking goes through the "+" menu below; paste lands here.
         onAttachmentsPasted: _addAttachments,
         onAttachmentRejected: _reject,
