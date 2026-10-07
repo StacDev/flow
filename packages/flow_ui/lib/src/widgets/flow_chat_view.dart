@@ -286,6 +286,7 @@ class _FlowChatViewState extends State<FlowChatView> {
   static const double _suggestionsGapCompact = 16;
   static const double _suggestionsExtraInset = 8;
 
+  final GlobalKey _composerKey = GlobalKey();
   bool _showJump = false;
   Timer? _jumpDebounce;
 
@@ -634,7 +635,7 @@ class _FlowChatViewState extends State<FlowChatView> {
       if (widget.aboveComposer != null) widget.aboveComposer!,
       if (widget.composer != null) ...[
         if (widget.aboveComposer != null) const SizedBox(height: _composerGap),
-        widget.composer!,
+        KeyedSubtree(key: _composerKey, child: widget.composer!),
       ],
     ];
 
@@ -722,7 +723,7 @@ class _FlowChatViewState extends State<FlowChatView> {
       } else if (column.isNotEmpty) {
         column.add(const SizedBox(height: _suggestionsGapCompact));
       }
-      column.add(widget.composer!);
+      column.add(KeyedSubtree(key: _composerKey, child: widget.composer!));
     }
 
     return [
