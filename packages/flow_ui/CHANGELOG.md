@@ -10,6 +10,7 @@
 - Adds FlowComposer.sendTooltip and stopTooltip, host-localized names for the send and stop buttons. Both now read as buttons with their enabled state, so a disabled send button no longer drops out of the accessibility tree.
 - Fixes Enter sending the draft while an input method is still composing: Enter now confirms the composition, as in any text field.
 - Enter no longer adds a newline while a reply streams, or when held down after a send; Shift+Enter still inserts one.
+- Keeps the composer's focus when FlowChatView leaves its wide zero state. The view rebuilt the composer as it moved from the centre to the bottom edge, so the field lost focus on the first send; it now moves the same composer, state and all.
 
 ## 0.3.0
 
