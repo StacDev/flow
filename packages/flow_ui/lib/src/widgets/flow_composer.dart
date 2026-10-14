@@ -15,6 +15,7 @@ import '../utils/flow_clipboard_paste.dart';
 import '../utils/flow_file_picker.dart';
 import '../utils/flow_gradient_outline.dart';
 import '../utils/flow_selection.dart';
+import '../utils/flow_send_button.dart';
 import 'flow_attachment_group.dart';
 import 'flow_drop_target.dart';
 import 'flow_pill.dart';
@@ -398,14 +399,6 @@ class _FlowComposerState extends State<FlowComposer> {
   static const double _outlineActiveAlpha = 0.20;
   static const double _outlineActiveFadeAlpha = 0.12;
 
-  /// Send and stop are the design's ringed button: a 26px disc inside a
-  /// surface-colored gap and a 1px ring, on a 32px frame.
-  static const double _buttonFrame = 32;
-  static const double _buttonDisc = 26;
-
-  /// Centers the stop glyph on the disc (26 = 18 + 2 × 4).
-  static const double _stopPadding = 4;
-
   /// The attach affordance: the menus' trigger metrics — an 18px glyph
   /// padded 7 onto a 32px disc.
   static const double _attachIconSize = 18;
@@ -698,34 +691,6 @@ class _FlowComposerState extends State<FlowComposer> {
     return KeyEventResult.handled;
   }
 
-  /// The design's button anatomy: the disc floats inside a gap of the
-  /// card's own surface, enclosed by a hairline ring — the ring muted while
-  /// the button can't act, so the geometry never jumps on enable.
-  Widget _ringed(
-    BuildContext context, {
-    required bool active,
-    required Widget disc,
-  }) {
-    final colors = context.flowColors;
-    final style = _styleOf(context);
-    return Container(
-      width: _buttonFrame,
-      height: _buttonFrame,
-      alignment: Alignment.center,
-      decoration: ShapeDecoration(
-        color: style?.backgroundColor ?? colors.surfaceBright,
-        shape: CircleBorder(
-          side: BorderSide(
-            color: active
-                ? (style?.sendBackgroundColor ?? colors.primary)
-                : colors.outlineVariant,
-          ),
-        ),
-      ),
-      child: SizedBox.square(dimension: _buttonDisc, child: disc),
-    );
-  }
-
   /// The attach affordance: the menus' trigger idiom — an 18px glyph on
   /// a 32px disc washed with `surfaceContainer` on hover — not the send
   /// button's ringed disc. Attach is editing, so [FlowComposer.enabled]
@@ -778,73 +743,18 @@ class _FlowComposerState extends State<FlowComposer> {
   }
 
   Widget _buildSendStopButton(BuildContext context) {
-    final colors = context.flowColors;
-    final style = _styleOf(context);
-    final discColor = style?.sendBackgroundColor ?? colors.primary;
-    final glyphColor = style?.sendForegroundColor ?? colors.onPrimary;
-    if (widget.isStreaming) {
-      return _buttonSemantics(
-        label: widget.stopTooltip,
-        enabled: widget.onStop != null,
-        child: _ringed(
-          context,
-          active: true,
-          disc: FlowCircleButton(
-            icon: Icons.stop_rounded,
-            background: discColor,
-            foreground: glyphColor,
-            padding: _stopPadding,
-            onTap: widget.onStop,
-          ),
-        ),
-      );
-    }
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: _controller,
-      builder: (context, value, _) {
-        final canSend = _canSend(value.text.trim());
-        return _buttonSemantics(
-          label: widget.sendTooltip,
-          enabled: canSend,
-          child: _ringed(
-            context,
-            active: canSend,
-            disc: Material(
-              // Disabled keeps the arrow's ink and only drains the disc:
-              // primary gives way to the 30% disabled wash.
-              color: canSend ? discColor : colors.onSurfaceDisabled,
-              shape: const CircleBorder(),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: canSend ? _send : null,
-                customBorder: const CircleBorder(),
-                child: CustomPaint(
-                  // The design's arrow is a thin stroke, not the chunky
-                  // Material glyph.
-                  painter: _ArrowUpPainter(color: glyphColor),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
+      builder: (context, value, _) => FlowSendButton(
+        streaming: widget.isStreaming,
+        canSend: _canSend(value.text.trim()),
+        onSend: _send,
+        onStop: widget.onStop,
+        sendTooltip: widget.sendTooltip,
+        stopTooltip: widget.stopTooltip,
+        style: _styleOf(context),
+      ),
     );
-  }
-
-  Widget _buttonSemantics({
-    required String? label,
-    required bool enabled,
-    required Widget child,
-  }) {
-    final button = Semantics(
-      container: true,
-      button: true,
-      enabled: enabled,
-      label: label,
-      child: child,
-    );
-    if (label == null) return button;
-    return Tooltip(message: label, excludeFromSemantics: true, child: button);
   }
 
   /// The error banner: a tab in the error wash with matching hairline,
@@ -1236,40 +1146,6 @@ class _FlowComposerState extends State<FlowComposer> {
       ],
     );
   }
-}
-
-/// The send arrow: a thin rounded stroke, matching the design's 1.5-weight
-/// mark rather than the Material icon's filled glyph. Drawn to scale with
-/// the disc it sits on.
-class _ArrowUpPainter extends CustomPainter {
-  const _ArrowUpPainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = size.shortestSide / 17
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
-    final center = size.center(Offset.zero);
-    // The design's proportions on its 26px disc: a 12-tall stem with a
-    // 10-wide head.
-    final stem = size.shortestSide * (12 / 26) / 2;
-    final head = size.shortestSide * (10 / 26) / 2;
-    final top = Offset(center.dx, center.dy - stem);
-    canvas.drawLine(top, Offset(center.dx, center.dy + stem), paint);
-    final path = Path()
-      ..moveTo(center.dx - head, top.dy + head)
-      ..lineTo(top.dx, top.dy)
-      ..lineTo(center.dx + head, top.dy + head);
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(_ArrowUpPainter oldDelegate) => oldDelegate.color != color;
 }
 
 /// The design's warning diamond, drawn to scale: a rounded square on its

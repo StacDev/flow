@@ -28,6 +28,7 @@ class FlowComposerStyle {
     this.dropHighlightColor,
     this.errorBackgroundColor,
     this.errorForegroundColor,
+    this.animateStreaming,
   });
 
   /// The card's fill. Defaults to `surfaceBright`, the raised card's
@@ -69,6 +70,8 @@ class FlowComposerStyle {
   /// The error banner's glyph and text. Defaults to `onErrorContainer`.
   final Color? errorForegroundColor;
 
+  final bool? animateStreaming;
+
   /// A copy where [other]'s fields win over this style's.
   FlowComposerStyle merge(FlowComposerStyle? other) {
     if (other == null) return this;
@@ -83,6 +86,7 @@ class FlowComposerStyle {
       dropHighlightColor: other.dropHighlightColor ?? dropHighlightColor,
       errorBackgroundColor: other.errorBackgroundColor ?? errorBackgroundColor,
       errorForegroundColor: other.errorForegroundColor ?? errorForegroundColor,
+      animateStreaming: other.animateStreaming ?? animateStreaming,
     );
   }
 
@@ -121,6 +125,7 @@ class FlowComposerStyle {
         other.errorForegroundColor,
         t,
       ),
+      animateStreaming: t < 0.5 ? animateStreaming : other.animateStreaming,
     );
   }
 
@@ -137,7 +142,8 @@ class FlowComposerStyle {
         other.attachIconColor == attachIconColor &&
         other.dropHighlightColor == dropHighlightColor &&
         other.errorBackgroundColor == errorBackgroundColor &&
-        other.errorForegroundColor == errorForegroundColor;
+        other.errorForegroundColor == errorForegroundColor &&
+        other.animateStreaming == animateStreaming;
   }
 
   @override
@@ -152,5 +158,6 @@ class FlowComposerStyle {
     dropHighlightColor,
     errorBackgroundColor,
     errorForegroundColor,
+    animateStreaming,
   );
 }
